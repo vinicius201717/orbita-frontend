@@ -1,9 +1,9 @@
 import { BusinessRegistrationForm } from '@/features/auth/business-registration-form';
+import { AuthShell } from '@/components/layout/auth-shell';
 export default function BusinessSignup() {
   return (
-    <main className="auth-page">
-      <h1>Cadastrar estabelecimento</h1>
+    <AuthShell title="Cadastrar estabelecimento" description="Sua empresa conectada a uma nova forma de entregar.">
       <BusinessRegistrationForm />
-    </main>
+    </AuthShell>
   );
 }

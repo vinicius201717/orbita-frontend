@@ -1,9 +1,9 @@
 import { DriverRegistrationForm } from '@/features/auth/driver-registration-form';
+import { AuthShell } from '@/components/layout/auth-shell';
 export default function DriverSignup() {
   return (
-    <main className="auth-page">
-      <h1>Cadastrar como entregador</h1>
+    <AuthShell title="Cadastrar como entregador" description="Crie sua conta, informe seu veículo e prepare-se para rodar.">
       <DriverRegistrationForm />
-    </main>
+    </AuthShell>
   );
 }

@@ -1,10 +1,12 @@
 'use client';
 import Link from 'next/link';
+import { AccountSettings } from '@/features/auth/account-settings';
+import { WhatsAppAccountPanel } from '@/features/whatsapp/account-panel';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button, Card, FormField, PageHeader, Select, StatusBadge, Table } from '@/components/ui';
-import { EmptyState, ErrorState, LoadingState, UnavailableFeature } from '@/components/feedback';
+import { EmptyState, ErrorState, LoadingState } from '@/components/feedback';
 import { useAuth } from '@/providers/auth-provider';
 import { useNotify } from '@/providers/notification-provider';
 import { formatCurrency, formatDate, formatDistance, formatDuration } from '@/lib/format';
@@ -203,13 +205,13 @@ export function DriverOnboardingPage() {
               .
             </li>
             <li>
-              Documentos: <Link href="/app/entregador/documentos">envio indisponível na API atual</Link>.
+              Documentos: <Link href="/app/entregador/documentos">enviar e acompanhar análise</Link>.
             </li>
             <li>
               Localização:{' '}
               {query.data.locationConsentAt ? 'consentimento registrado' : 'consentimento pendente'}.
             </li>
-            <li>WhatsApp: consulta e consentimento próprios indisponíveis.</li>
+            <li>WhatsApp: <Link href="/app/entregador/perfil">gerenciar autorização e verificação</Link>.</li>
             <li>Aprovação ORBITA: {ONBOARDING_LABELS[query.data.onboardingStatus]}.</li>
           </ul>
           <GpsControls driver={query.data} />
@@ -317,14 +319,8 @@ export function DriverProfilePage() {
           <GpsControls driver={query.data} />
         </>
       )}
-      <UnavailableFeature
-        title="Edição de dados pessoais"
-        description="A API atual não oferece edição do perfil do entregador nem alteração de senha."
-      />
-      <UnavailableFeature
-        title="WhatsApp"
-        description="O telefone cadastrado não comprova integração ativa. Consulta de verificação e registro de consentimento pelo entregador ainda dependem de endpoints específicos."
-      />
+      <AccountSettings />
+      <WhatsAppAccountPanel />
     </section>
   );
 }

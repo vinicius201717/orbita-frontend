@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { z } from 'zod';
 import {
   Button,
@@ -15,17 +15,23 @@ import {
   PageHeader,
   Select,
   Textarea,
+  Table,
 } from '@/components/ui';
-import { ErrorState, SuccessMessage, UnavailableFeature } from '@/components/feedback';
+import { ErrorState, LoadingState, SuccessMessage } from '@/components/feedback';
 import { formatDate } from '@/lib/format';
 import { adminApi } from '@/services/api/admin.api';
 import { identitySchema } from './schemas';
 import { RecordFields } from './shared';
+import type { WhatsAppIdentity } from './types';
 
 type IdentityForm = z.infer<typeof identitySchema>;
 
 export function AdminWhatsApp() {
   const queryClient = useQueryClient();
+  const identities = useQuery({
+    queryKey: ['admin', 'whatsapp-identities'],
+    queryFn: () => adminApi.list<WhatsAppIdentity>('whatsapp-identities'),
+  });
   const [pending, setPending] = useState<IdentityForm | null>(null);
   const form = useForm<IdentityForm>({
     resolver: zodResolver(identitySchema),
@@ -50,6 +56,7 @@ export function AdminWhatsApp() {
       setPending(null);
       form.reset();
       await queryClient.invalidateQueries({ queryKey: ['admin', 'audit'] });
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'whatsapp-identities'] });
     },
   });
   return (
@@ -58,10 +65,44 @@ export function AdminWhatsApp() {
         title="WhatsApp"
         description="Verificação administrativa de identidade e consentimento, com registro em auditoria."
       />
-      <UnavailableFeature
-        title="Conexão e identidades cadastradas"
-        description="Não há endpoint de listagem de identidades ou status da conexão com o provedor. O cadastro de identidade abaixo não comprova que o envio de mensagens está ativo."
-      />
+      <Card title="Identidades registradas">
+        {identities.isPending ? (
+          <LoadingState />
+        ) : identities.isError ? (
+          <ErrorState error={identities.error} retry={() => void identities.refetch()} />
+        ) : identities.data.length === 0 ? (
+          <p>Nenhuma identidade registrada.</p>
+        ) : (
+          <Table caption="Identidades WhatsApp (até 50 registros)">
+            <thead>
+              <tr>
+                <th>Telefone</th>
+                <th>Tipo</th>
+                <th>Cadastro</th>
+                <th>Verificação</th>
+                <th>Consentimento</th>
+                <th>Última entrada</th>
+              </tr>
+            </thead>
+            <tbody>
+              {identities.data.map((identity) => (
+                <tr key={identity.id}>
+                  <td>{identity.phoneNumber}</td>
+                  <td>{identity.entityType}</td>
+                  <td>{identity.entityId}</td>
+                  <td>{formatDate(identity.verifiedAt)}</td>
+                  <td>{formatDate(identity.optInAt)}</td>
+                  <td>{formatDate(identity.lastInboundAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+        <p>
+          O estado `ready` do perfil ainda depende da configuração do provedor e das credenciais
+          externas.
+        </p>
+      </Card>
       <Card title="Registrar identidade verificada">
         <p>
           O número precisa coincidir com o telefone cadastrado da empresa ou do entregador. Confirme a

@@ -12,7 +12,7 @@ Navegador → /api/session/* no Next.js → /auth/* no backend
 
 Contratos existentes: `POST /auth/register`, `/auth/login`, `/auth/refresh` e `/auth/logout`. O cadastro público só permite `BUSINESS_OWNER` e `DRIVER`. O BFF valida a entrada antes de encaminhar e não expõe refresh token.
 
-**Contrato ausente:** identidade autenticada completa. `BACKEND_IDENTITY_PATH` fica vazio; não existe login real funcional até que um contrato autorizado seja disponibilizado. O adaptador aceita `/auth/me` com UUID do usuário, nome, e-mail, role e vínculos `businessId`/`driverId` anuláveis. Esse path é uma dependência futura, não uma alegação de endpoint existente no backend.
+`GET /auth/me` retorna a identidade pública da conta autenticada. `PATCH /auth/me` atualiza nome e telefone; `POST /auth/change-password` troca a senha, incrementa a versão de autenticação e revoga os refresh tokens anteriores. O BFF usa esse contrato para hidratar e atualizar a sessão.
 
 Uma sessão estabelecida usa ID aleatório de 32 bytes no cookie, armazenamento Redis com expiração de 30 dias e payload criptografado por AES-256-GCM. O access token usa a expiração fornecida pelo backend e começa a renovar 30 segundos antes. Um lock Redis coordena refresh concorrente; gravações evitam ressuscitar sessão encerrada. A identidade é reconsultada pelo endpoint de sessão.
 
@@ -26,7 +26,7 @@ O servidor impõe timeout, `no-store`, bloqueio de redirecionamento remoto e lim
 
 Serviços em `src/services/api` centralizam acesso por domínio. O TanStack Query mantém loading, erro, cache, refetch, paginação e invalidação. IDs de empresa/driver vêm da sessão ou da projeção autorizada, e a API impõe isolamento. O frontend não combina entregas de empresas distintas para mostrar uma rota empresarial completa.
 
-`docs/openapi.json` é snapshot auditado do backend `8dca25a`. `npm run api:types` gera `src/types/openapi.generated.ts`; tipos manuais de resposta complementam somente schemas que faltam no OpenAPI, com base nos serviços e Prisma auditados. Mudanças no backend exigem atualização do snapshot, revisão dos tipos manuais e testes. Não regenerar e presumir que respostas sem schema foram validadas.
+`docs/openapi.json` é sincronizado com o backend atual. `npm run api:types` gera `src/types/openapi.generated.ts`; tipos manuais de resposta complementam somente schemas que faltam no OpenAPI, com base nos serviços e Prisma auditados. Mudanças no backend exigem atualização do snapshot, revisão dos tipos manuais e testes.
 
 ### Paginação e valores
 
@@ -66,7 +66,7 @@ Coleta contínua em segundo plano pertence ao futuro companion Android/iOS, fora
 
 ## Documentos
 
-As páginas empresarial e de entregador fornecem estrutura sem upload ativo. O schema Prisma por si só não é contrato de armazenamento. Faltam endpoints e política de tipo/tamanho/extensão, envio, consulta autorizada, reenvio e análise. File input e validador genérico estão preparados, mas permanecem indisponíveis até existir contrato.
+As páginas empresarial e de entregador usam `GET /documents/policy`, `GET /documents`, `POST /documents` multipart e conteúdo protegido pelo BFF. A política atual aceita PDF/JPEG/PNG de até 5 MB; o backend confere assinatura, hash e ownership. ADMIN revisa em `PATCH /documents/:id/review`; nenhum `storageKey` é enviado à interface.
 
 Nenhum documento é tratado como requisito legal sem configuração do backend. Arquivos não são convertidos para base64 ou enviados para um provider escolhido pelo frontend. Referências de anexos já existentes não autorizam acesso a URLs arbitrárias ou upload novo.
 
@@ -74,10 +74,10 @@ Nenhum documento é tratado como requisito legal sem configuração do backend. 
 
 Empresa consulta seu telefone cadastrado e encontra comandos informativos suportados pelo backend: `nova entrega`, `pronto <id>`, `cancelar <id>`, `pedidos`, `saldo` e `suporte`. Isso não afirma que o provider está conectado ou que o telefone foi verificado.
 
-Admin pode usar `POST /admin/whatsapp-identities`, com evidência e confirmação do vínculo/opt-in. Não há GET de identidades, estado do provider, revogação ou consentimento self-service. Credenciais Meta, assinatura de webhook, templates, inbox/outbox e envio de mensagens são exclusivamente responsabilidade do backend.
+Admin pode usar `POST /admin/whatsapp-identities`, com evidência e confirmação do vínculo/opt-in. Empresas e entregadores consultam `GET /whatsapp/me` e podem conceder/revogar consentimento quando o papel permite. O estado `ready` continua refletindo configuração real do provider; credenciais Meta, assinatura de webhook, templates, inbox/outbox e envio de mensagens são responsabilidade do backend.
 
 ## Limites e homologação
 
-Verificações automatizadas de UI usam mocks apenas nos testes. A homologação real exige resolver a identidade, ter API/worker/Redis funcionando e contas autorizadas de cada role. Testar: empresa cria entrega e marca pronta; driver aceita oferta, consulta rota e confirma prova; admin revisa onboarding; depois refresh, logout, reconexão e tentativas de acesso entre perfis. Uma passagem em build/lint/typecheck não substitui essa homologação.
+Verificações automatizadas de UI usam mocks apenas nos testes unitários. A homologação real usa API/worker/Redis funcionando e contas autorizadas de cada papel. O cenário Playwright faz login pelo BFF, atravessa empresa, driver e admin, e valida refresh, logout, reconexão e tentativas de acesso entre perfis. Uma passagem em build/lint/typecheck não substitui homologação de provedores externos.
 
 Google/Meta reais e documentos não devem ser anunciados como funcionando enquanto suas credenciais ou contratos não existirem. O frontend não implementa pagamentos reais, recuperação de senha inexistente, cálculo local de saldo ou funcionalidades administrativas sem API.

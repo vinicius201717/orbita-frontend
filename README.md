@@ -1,8 +1,10 @@
 # ORBITA — frontend operacional
 
-Frontend separado do backend para empresas, entregadores e administradores. Usa Next.js App Router, React, TypeScript estrito, React Hook Form, Zod, TanStack Query e Socket.IO. O HTML semântico e as classes estão preparados para estilização posterior: não há biblioteca visual, identidade visual, estilos inline ou CSS de apresentação.
+Frontend separado para empresas, entregadores e administradores. Usa Next.js App Router, React, TypeScript estrito, React Hook Form, Zod, TanStack Query e Socket.IO. A interface usa CSS Modules para layouts e páginas, tokens globais para a identidade e classes semânticas compartilhadas para controles, tabelas, estados e formulários.
 
-**Limitação atual de integração:** o backend auditado não possui um endpoint autenticado que retorne a identidade completa do usuário. A interface de login e o BFF estão implementados, mas o login real permanece indisponível com a configuração padrão. O cadastro pode criar a conta real e parar ao iniciar a sessão; empresa, unidade, veículo e consentimento dependem dessa sessão. Não existe modo demonstrativo que simule autenticação na aplicação. Consulte [as pendências de integração](FRONTEND_BACKEND_GAPS.md) antes de testar esses fluxos com dados reais.
+O contrato de identidade está integrado ao backend: o BFF cria a sessão a partir de `POST /auth/login`, consulta `GET /auth/me`, atualiza a conta em `PATCH /auth/me` e encerra sessões antigas após troca de senha. Os fluxos de documentos usam o endpoint privado multipart, com política de arquivo fornecida pela API. A autorização final continua no backend e cada tela apresenta somente respostas reais.
+
+A identidade visual ORBITA usa verde `#00E676` e `#00C896`, preto profundo `#0A0F14`, cinza escuro `#1A2228`, cinza claro `#E9EDF2`, Sora para títulos e Inter para textos. O componente reutilizável [`Logo`](src/components/brand/logo.tsx) aplica o símbolo fornecido em navegação, autenticação, favicon e landing page. O mapa de tokens e a origem dos arquivos estão em [`docs/visual-system.md`](docs/visual-system.md).
 
 ## Instalação
 
@@ -28,16 +30,16 @@ O backend deve estar disponível em `http://localhost:3000/api/v1`; sua document
 
 ## Ambiente
 
-| Variável                 | Escopo    | Uso                                                                                                                                                                   |
-| ------------------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BACKEND_API_URL`        | Servidor  | Base REST do backend, incluindo `/api/v1`.                                                                                                                            |
-| `APP_URL`                | Servidor  | Origem exata do frontend, usada na validação de origem das mutations.                                                                                                 |
-| `FRONTEND_REDIS_URL`     | Servidor  | Redis de sessões; exemplo local `redis://localhost:56379/2`, separado logicamente das filas.                                                                          |
-| `SESSION_ENCRYPTION_KEY` | Servidor  | Chave de 32 bytes em 64 caracteres hexadecimais, gerada por `setup:env`.                                                                                              |
-| `BACKEND_IDENTITY_PATH`  | Servidor  | Vazio enquanto a API de identidade estiver ausente. O adaptador suporta `/auth/me` quando esse contrato existir de fato. Não habilite apenas para ocultar o bloqueio. |
-| `NEXT_PUBLIC_API_URL`    | Navegador | `/api/backend`, proxy no mesmo domínio. Mantenha essa base para usar a autenticação do BFF.                                                                           |
-| `NEXT_PUBLIC_WS_URL`     | Navegador | URL completa do namespace, localmente `http://localhost:3000/operations`.                                                                                             |
-| `NEXT_PUBLIC_APP_ENV`    | Navegador | Identificação do ambiente; não é um controle de autorização.                                                                                                          |
+| Variável                 | Escopo    | Uso                                                                                                                        |
+| ------------------------ | --------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `BACKEND_API_URL`        | Servidor  | Base REST do backend, incluindo `/api/v1`.                                                                                 |
+| `APP_URL`                | Servidor  | Origem exata do frontend, usada na validação de origem das mutations.                                                      |
+| `FRONTEND_REDIS_URL`     | Servidor  | Redis de sessões; exemplo local `redis://localhost:56379/2`, separado logicamente das filas.                               |
+| `SESSION_ENCRYPTION_KEY` | Servidor  | Chave de 32 bytes em 64 caracteres hexadecimais, gerada por `setup:env`.                                                   |
+| `BACKEND_IDENTITY_PATH`  | Servidor  | `/auth/me`, contrato autenticado usado para hidratar a sessão. O valor vazio também cai nesse caminho por compatibilidade. |
+| `NEXT_PUBLIC_API_URL`    | Navegador | `/api/backend`, proxy no mesmo domínio. Mantenha essa base para usar a autenticação do BFF.                                |
+| `NEXT_PUBLIC_WS_URL`     | Navegador | URL completa do namespace, localmente `http://localhost:3000/operations`.                                                  |
+| `NEXT_PUBLIC_APP_ENV`    | Navegador | Identificação do ambiente; não é um controle de autorização.                                                               |
 
 Não coloque chaves JWT, refresh tokens, senhas ou a chave de sessão em variáveis `NEXT_PUBLIC_*`. Em produção, configure HTTPS, `APP_URL` com a origem pública, CORS do backend para essa origem e Redis com autenticação e transporte apropriados. Todas as instâncias Next.js precisam compartilhar o Redis de sessões e a chave de criptografia. Trocar a chave invalida as sessões existentes. Redis DB 2 é separação lógica, não isolamento de segurança; um serviço Redis exclusivo pode ser usado na implantação.
 
@@ -77,7 +79,7 @@ As páginas consomem projeções autorizadas da API. O frontend não calcula pre
 
 ## Contratos REST e realtime
 
-O snapshot em `docs/openapi.json` foi auditado contra o backend no commit `8dca25a`. Ele é a referência para paths e DTOs, mas não descreve integralmente as respostas. Os tipos de resposta utilizados pela interface foram complementados pela leitura dos controllers, services e schema Prisma; não são formatos presumidos. O backend não foi alterado por este projeto.
+O snapshot em `docs/openapi.json` é exportado do backend e acompanha os paths de identidade, documentos, rotas, filiais, WhatsApp, carteiras e incidentes. Ele é a referência para paths e DTOs; os tipos de projeção usados pelas telas são revisados junto dos controllers, services e schema Prisma.
 
 Após uma alteração autorizada no contrato do backend, atualize o snapshot e execute:
 
@@ -109,8 +111,8 @@ GPS web é uma ação explícita em foreground. Rastreamento contínuo em segund
 
 Para Playwright, instale Chromium com `npx playwright install chromium` ou defina `E2E_BROWSER_CHANNEL=msedge` para usar o Edge instalado. API, worker, Redis e frontend devem estar ativos. As fixtures operacionais aceitam somente API e Redis locais. A senha do admin vem de `E2E_ADMIN_PASSWORD` (com `E2E_ADMIN_EMAIL` opcional) ou de `SEED_PASSWORD` no arquivo apontado por `E2E_BACKEND_ENV`, cujo padrão local é `../Orbita/.env`. Credenciais nunca são versionadas.
 
-Os testes operacionais criam contas identificadas por `frontend-e2e-`, empresa, unidade, veículo e entrega reais. Uma fixture exclusiva dos testes insere a sessão criptografada no Redis e controla apenas `GET /api/session`, devido à ausência de identidade no backend. Criação e conclusão de entrega, análise administrativa, oferta, PIN, rota e atualização realtime atravessam o BFF e o backend reais. Não existe esse mecanismo de acesso em `src/`. Sessões são removidas e tokens revogados ao terminar; registros de teste permanecem no banco local, pois a API não oferece exclusão desses cadastros. Execute em uma base local destinada a desenvolvimento/testes.
+Os testes operacionais criam contas identificadas por `frontend-e2e-`, empresa, unidade, veículo e entrega reais. A fixture faz login pelo próprio `/api/session/login`, sem inserir sessão diretamente no Redis e sem interceptar a identidade. Criação e conclusão de entrega, análise administrativa, oferta, PIN, rota e atualização realtime atravessam o BFF e o backend reais. Sessões são encerradas ao terminar; registros de teste permanecem no banco local, pois a API não oferece exclusão desses cadastros. Execute em uma base local destinada a desenvolvimento/testes.
 
-Validação em 03/10/2026: TypeScript, ESLint e build de produção passaram; **61 testes Vitest e 3 testes Playwright passaram**. A navegação das três áreas, o bloqueio por perfil e a atualização realtime da entrega foram verificados. A autenticação completa continua bloqueada pelo contrato ausente, e não é declarada homologada por essas fixtures. Veja [evidências e limites da validação](docs/validation.md) e a [proposta mínima de identidade](docs/auth-identity-proposal.md).
+Validação local atual: TypeScript, ESLint, build de produção, 61 testes Vitest, 35 testes de integração do backend em 7 suítes e 4 cenários Playwright autenticados pelo login real. A cobertura visual usa o navegador local em desktop e viewport móvel; integrações reais Google Maps, Meta WhatsApp, pagamentos e credenciais externas continuam condicionadas à configuração dessas contas.
 
-Documentação complementar: [mapa de rotas](docs/routes.md), [componentes](docs/components.md) e [pendências frontend/backend](FRONTEND_BACKEND_GAPS.md). Documentos jurídicos são placeholders identificados; upload sem endpoint, pagamentos reais, mapas customizados, push e identidade visual não são simulados.
+Documentação complementar: [mapa de rotas](docs/routes.md), [componentes](docs/components.md), [contratos administrativos](docs/admin-contracts.md), [integrações](docs/integrations.md) e [sistema visual](docs/visual-system.md). Documentos jurídicos são placeholders identificados; pagamentos reais, mapas customizados e push continuam condicionados à configuração externa.

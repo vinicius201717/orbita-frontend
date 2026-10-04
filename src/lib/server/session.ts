@@ -59,23 +59,11 @@ async function read(id: string) {
   }
 }
 export async function identity(accessToken: string) {
-  const path = process.env.BACKEND_IDENTITY_PATH;
-  if (!path)
-    throw new ServerApiError(
-      503,
-      'IDENTITY_ENDPOINT_MISSING',
-      'O backend ainda não disponibiliza a identificação da sessão.',
-    );
+  const path = process.env.BACKEND_IDENTITY_PATH || '/auth/me';
   if (path !== '/auth/me') throw new Error('Unsupported identity path');
   return userSchema.parse(await readBackend(await backend(path, {}, accessToken)));
 }
 export async function createSession(email: string, password: string) {
-  if (!process.env.BACKEND_IDENTITY_PATH)
-    throw new ServerApiError(
-      503,
-      'IDENTITY_ENDPOINT_MISSING',
-      'Identificação de sessão indisponível no backend atual.',
-    );
   const tokens = tokenSchema.parse(
     await readBackend(
       await backend('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),

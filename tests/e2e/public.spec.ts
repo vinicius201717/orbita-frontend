@@ -3,7 +3,7 @@ test('public navigation, registration validation and protected redirects', async
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'ORBITA', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Mais entregas/ })).toBeVisible();
   await page.getByRole('link', { name: 'Entrar', exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
@@ -23,7 +23,7 @@ test('public navigation, registration validation and protected redirects', async
   }
   expect(errors).toEqual([]);
 });
-test('missing identity contract fails explicitly without creating a browser session', async ({
+test('invalid credentials fail through the real identity endpoint without creating a browser session', async ({
   page,
 }) => {
   await page.goto('/login');
@@ -31,8 +31,8 @@ test('missing identity contract fails explicitly without creating a browser sess
   await page.getByLabel('Senha', { exact: true }).fill('unsubmitted-test-password');
   const response = page.waitForResponse('/api/session/login');
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-  expect((await response).status()).toBe(503);
-  await expect(page.locator('.error-state')).toContainText(/identifica|identidade/i);
+  expect((await response).status()).toBe(401);
+  await expect(page.locator('.error-state')).toContainText(/e-mail ou senha incorretos/i);
   expect(
     (await page.context().cookies()).filter((cookie) => cookie.name.includes('orbita_session')),
   ).toHaveLength(0);

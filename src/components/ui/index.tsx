@@ -121,10 +121,10 @@ export function Table({
   ...props
 }: TableHTMLAttributes<HTMLTableElement> & { caption?: string }) {
   return (
-    <table {...props} className="data-table">
+    <div className="table-container"><table {...props} className="data-table">
       {caption && <caption>{caption}</caption>}
       {children}
-    </table>
+    </table></div>
   );
 }
 export function ConfirmDialog({

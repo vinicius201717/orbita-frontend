@@ -33,6 +33,7 @@ export const driverApi = {
   reject: (id: string) =>
     api.post<{ id: string; changed: boolean }>(`/driver/offers/${idPath(id)}/reject`),
   route: (id: string) => api.get<DriverRoute>(`/routes/${idPath(id)}`),
+  routes: (cursor?: string) => api.get<{ items: DriverRoute[]; nextCursor: string | null }>('/routes', { cursor }),
   start: (id: string) => api.post<{ id: string; status: string }>(`/routes/${idPath(id)}/start`),
   arrive: (routeId: string, stopId: string) =>
     api.post<unknown>(`/routes/${idPath(routeId)}/stops/${idPath(stopId)}/arrive`),

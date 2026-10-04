@@ -37,7 +37,7 @@ export function BusinessOnboarding() {
           <Link href="/app/whatsapp">Ver orientações</Link>
         </li>
         <li>
-          Documentos: envio ainda indisponível.{' '}
+          Documentos: envie os arquivos solicitados pela operação.{' '}
           <Link href="/app/empresa/documentos">Ver documentos</Link>
         </li>
         <li>

@@ -9,6 +9,7 @@ const resources = new Set([
   'audit',
   'fraud-flags',
   'privacy-requests',
+  'whatsapp-identities',
 ]);
 const uuid = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}';
 const routes = Object.entries(specification.paths)
@@ -32,6 +33,7 @@ const routes = Object.entries(specification.paths)
     resource: path.endsWith('/{resource}'),
   }));
 export function allowedEndpoint(path: string, method: string) {
+  if (path === '/auth/me' && method === 'PATCH') return true;
   if (path.includes('..') || path.includes('\\') || path.includes('%')) return false;
   return routes.some((route) => {
     const match = route.pattern.exec(path);

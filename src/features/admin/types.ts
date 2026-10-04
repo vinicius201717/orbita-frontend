@@ -1,4 +1,17 @@
 export type OnboardingStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export interface AdminDriverDetail extends AdminDriver {
+  user: { id: string; name: string; email: string; active: boolean };
+  vehicles: import('@/features/driver/types').Vehicle[];
+}
+export interface AdminWallet {
+  id: string;
+  type: 'DRIVER' | 'BUSINESS' | 'PLATFORM';
+  key: string;
+  driverId: string | null;
+  businessId: string | null;
+  ownerName: string;
+  balanceCents: number;
+}
 
 export interface AdminDriver {
   id: string;
@@ -228,6 +241,7 @@ export type AdminResource =
   | 'financial-transactions'
   | 'audit'
   | 'fraud-flags'
-  | 'privacy-requests';
+  | 'privacy-requests'
+  | 'whatsapp-identities';
 
 export type DeliveryFilters = Record<string, string | number | boolean | undefined>;

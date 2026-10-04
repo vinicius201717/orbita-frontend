@@ -15,10 +15,11 @@ import {
   Select,
   StatusBadge,
 } from '@/components/ui';
-import { EmptyState, ErrorState, LoadingState, UnavailableFeature } from '@/components/feedback';
+import { ErrorState, LoadingState } from '@/components/feedback';
+import { DocumentsPanel } from '@/features/documents/documents-panel';
 import { formatDate } from '@/lib/format';
 import { useNotify } from '@/providers/notification-provider';
-import { adminApi, findAdminDriver } from '@/services/api/admin.api';
+import { adminApi } from '@/services/api/admin.api';
 import { AdminRecordList, EntityLink, RecordFields } from './shared';
 import type { AdminDriver, OnboardingStatus } from './types';
 
@@ -34,7 +35,7 @@ export function AdminDrivers() {
     <AdminRecordList<AdminDriver>
       title="Entregadores"
       resource="drivers"
-      description="A API administrativa identifica o entregador por ID e telefone. Nome, veículo e documentos não estão incluídos nesta consulta."
+      description="Consulte o perfil, os veículos e os documentos antes de revisar o cadastro."
       columns={[
         {
           title: 'Entregador',
@@ -75,7 +76,7 @@ function ReviewForm({ driver }: { driver: AdminDriver }) {
     mutationFn: (status: OnboardingStatus) => adminApi.reviewDriver(driver.id, status),
     onError: () => setConfirmation(null),
     onSuccess: async (updated) => {
-      queryClient.setQueryData(['admin', 'driver', driver.id], updated);
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'driver', updated.id] });
       await queryClient.invalidateQueries({ queryKey: ['admin', 'drivers'] });
       setConfirmation(null);
       notify('Análise do entregador registrada.', 'success');
@@ -84,8 +85,7 @@ function ReviewForm({ driver }: { driver: AdminDriver }) {
   return (
     <Card title="Análise de onboarding">
       <p>
-        Confira as evidências disponíveis antes de decidir. Esta tela não disponibiliza documentos porque
-        a API administrativa não os retorna.
+        Confira os dados cadastrais, veículos e documentos antes de decidir.
       </p>
       <form className="form" onSubmit={form.handleSubmit(({ status }) => setConfirmation(status))}>
         <FormField
@@ -120,10 +120,10 @@ function ReviewForm({ driver }: { driver: AdminDriver }) {
   );
 }
 
-export function AdminDriverDetail({ id, cursor }: { id: string; cursor?: string }) {
+export function AdminDriverDetail({ id }: { id: string; cursor?: string }) {
   const query = useQuery({
     queryKey: ['admin', 'driver', id],
-    queryFn: () => findAdminDriver(id, cursor),
+    queryFn: () => adminApi.driver(id),
   });
   return (
     <section className="admin-driver-detail">
@@ -134,11 +134,6 @@ export function AdminDriverDetail({ id, cursor }: { id: string; cursor?: string 
         <LoadingState />
       ) : query.isError ? (
         <ErrorState error={query.error} retry={() => void query.refetch()} />
-      ) : !query.data ? (
-        <EmptyState
-          title="Entregador não localizado nesta consulta"
-          description="Não existe busca administrativa por ID. A consulta percorreu até 1.000 registros; abra o detalhe a partir da página correspondente na listagem."
-        />
       ) : (
         <>
           <Card title="Cadastro e operação">
@@ -146,6 +141,9 @@ export function AdminDriverDetail({ id, cursor }: { id: string; cursor?: string 
               items={[
                 { label: 'ID', value: query.data.id },
                 { label: 'Usuário', value: query.data.userId },
+                { label: 'Nome', value: query.data.user.name },
+                { label: 'E-mail', value: query.data.user.email },
+                { label: 'Conta ativa', value: query.data.user.active ? 'Sim' : 'Não' },
                 { label: 'Telefone', value: query.data.phone },
                 { label: 'Onboarding', value: <StatusBadge status={query.data.onboardingStatus} /> },
                 { label: 'Disponibilidade', value: <StatusBadge status={query.data.status} /> },
@@ -168,10 +166,10 @@ export function AdminDriverDetail({ id, cursor }: { id: string; cursor?: string 
               ]}
             />
           </Card>
-          <UnavailableFeature
-            title="Nome, veículo e documentos"
-            description="A consulta administrativa retorna somente o perfil operacional. A visualização e revisão de documentos individuais dependem de novos endpoints."
-          />
+          <Card title="Veículos">
+            {query.data.vehicles.length ? query.data.vehicles.map((vehicle) => <p key={vehicle.id}>{vehicle.plate} · {vehicle.brand} {vehicle.model} · {vehicle.capacityUnits} unidades · {vehicle.active ? 'Ativo' : 'Inativo'}</p>) : <p>Nenhum veículo cadastrado.</p>}
+          </Card>
+          <DocumentsPanel entityType="DRIVER" entityId={id} review />
           <ReviewForm key={`${query.data.id}-${query.data.onboardingStatus}`} driver={query.data} />
           <Link href={`/admin/entregas?driverId=${query.data.id}`}>Ver entregas deste entregador</Link>
         </>

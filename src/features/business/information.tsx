@@ -1,8 +1,10 @@
 'use client';
 import Link from 'next/link';
-import { PageHeader, Card, FormField, Input, Select, FileInput, Button } from '@/components/ui';
+import { PageHeader, Card } from '@/components/ui';
 import { UnavailableFeature, ErrorState, LoadingState } from '@/components/feedback';
 import { useAuth } from '@/providers/auth-provider';
+import { DocumentsPanel } from '@/features/documents/documents-panel';
+import { WhatsAppAccountPanel } from '@/features/whatsapp/account-panel';
 import { useBusiness } from './queries';
 export function BusinessWhatsApp() {
   const { user } = useAuth();
@@ -18,10 +20,7 @@ export function BusinessWhatsApp() {
         ) : (
           <p>Telefone cadastrado na empresa: {query.data?.phone}</p>
         ))}
-      <UnavailableFeature
-        title="Estado da integração"
-        description="A API não permite consultar ou configurar a verificação e o consentimento do WhatsApp da empresa. O telefone cadastrado não comprova que o canal está ativo. Solicite a verificação ao administrador."
-      />
+      <WhatsAppAccountPanel />
       <Card title="Comandos suportados pelo backend">
         <dl>
           <dt>nova entrega</dt>
@@ -45,35 +44,15 @@ export function BusinessWhatsApp() {
   );
 }
 export function BusinessDocuments() {
+  const { user } = useAuth();
   return (
     <>
-      <PageHeader
-        title="Documentos da empresa"
-        description="Área preparada para documentos exigidos pela configuração da operação."
-      />
-      <UnavailableFeature
-        title="Envio e consulta de documentos"
-        description="O backend ainda não possui endpoints para documentos empresariais. Nenhum documento é exigido ou enviado por esta tela."
-      />
-      <fieldset disabled>
-        <legend>Estrutura de envio — indisponível</legend>
-        <FormField id="documentType" label="Tipo de documento">
-          <Select>
-            <option>Tipos dependem da configuração da operação</option>
-          </Select>
-        </FormField>
-        <FormField id="documentFile" label="Arquivo">
-          <FileInput />
-        </FormField>
-        <FormField id="documentExpires" label="Data de validade (opcional)">
-          <Input type="date" />
-        </FormField>
-        <Button>Enviar documento</Button>
-      </fieldset>
-      <p>
-        Após integração, os documentos poderão mostrar situação de análise, validade e observação. Nenhum
-        arquivo é armazenado localmente.
-      </p>
+      <PageHeader title="Documentos da empresa" description="Envie arquivos e acompanhe a análise." />
+      {user?.businessId ? (
+        <DocumentsPanel entityType="BUSINESS" entityId={user.businessId} />
+      ) : (
+        <p>Cadastre a empresa na configuração inicial antes de enviar documentos.</p>
+      )}
     </>
   );
 }

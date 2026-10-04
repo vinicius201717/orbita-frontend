@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Card, PageHeader, StatusBadge, Table } from '@/components/ui';
-import { EmptyState, ErrorState, LoadingState, UnavailableFeature } from '@/components/feedback';
+import { EmptyState, ErrorState, LoadingState } from '@/components/feedback';
+import { DocumentsPanel } from '@/features/documents/documents-panel';
 import { formatDate } from '@/lib/format';
 import { adminApi } from '@/services/api/admin.api';
 import { AdminRecordList, EntityLink, RecordFields } from './shared';
@@ -72,10 +73,8 @@ export function AdminBusinessDetail({ id }: { id: string }) {
             />
           </Card>
           <Link href={`/admin/entregas?businessId=${id}`}>Ver entregas da empresa</Link>
-          <UnavailableFeature
-            title="Situação do WhatsApp"
-            description="O telefone cadastrado está disponível. A API não oferece consulta de verificação, opt-in ou estado da conexão."
-          />
+          <Link href="/admin/whatsapp">Consultar identidades e consentimento do WhatsApp</Link>
+          <DocumentsPanel entityType="BUSINESS" entityId={id} review />
         </>
       )}
       <section aria-labelledby="admin-branches-title">

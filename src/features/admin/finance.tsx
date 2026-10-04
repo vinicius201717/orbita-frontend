@@ -3,9 +3,9 @@
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { z } from 'zod';
-import { Button, Card, ConfirmDialog, FormField, Input, Table, Textarea } from '@/components/ui';
+import { Button, Card, ConfirmDialog, FormField, Input, Select, Table, Textarea } from '@/components/ui';
 import { ErrorState, LoadingState, UnavailableFeature } from '@/components/feedback';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { statusLabel } from '@/constants/status';
@@ -45,6 +45,7 @@ function AdjustmentForm() {
   const { notify } = useNotify();
   const key = useRef<string | null>(null);
   const [pending, setPending] = useState<Adjustment | null>(null);
+  const wallets = useInfiniteQuery({ queryKey: ['admin', 'wallets'], queryFn: ({ pageParam }) => adminApi.wallets(pageParam), initialPageParam: undefined as string | undefined, getNextPageParam: (page) => page.nextCursor ?? undefined });
   const form = useForm<z.infer<typeof adjustmentFormSchema>>({
     resolver: zodResolver(adjustmentFormSchema),
     defaultValues: { walletId: '', amountCents: 0, reason: '' },
@@ -57,19 +58,19 @@ function AdjustmentForm() {
       key.current = null;
       form.reset();
       await queryClient.invalidateQueries({ queryKey: ['admin', 'financial-transactions'] });
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'wallets'] });
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'wallet'] });
       notify(`Ajuste registrado. Transação ${transaction.id}.`, 'success');
     },
   });
   return (
     <Card title="Ajuste de carteira">
       <p>
-        Informe o ID de uma carteira de empresa ou entregador. Valor positivo credita; valor negativo
+        Selecione uma carteira de empresa ou entregador. Valor positivo credita; valor negativo
         debita. O registro terá contrapartida na plataforma e ficará na auditoria.
       </p>
-      <p>
-        Não há busca administrativa de carteiras. Use um ID verificado em um lançamento existente ou
-        fornecido pelo responsável pela operação.
-      </p>
+      {wallets.isPending && <LoadingState />}
+      {wallets.isError && <ErrorState error={wallets.error} retry={() => void wallets.refetch()} />}
       <form
         className="form"
         onSubmit={(event) =>
@@ -81,11 +82,12 @@ function AdjustmentForm() {
       >
         <FormField
           id="adjust-wallet"
-          label="ID da carteira"
+          label="Carteira"
           error={form.formState.errors.walletId?.message}
         >
-          <Input id="adjust-wallet" {...form.register('walletId')} />
+          <Select id="adjust-wallet" {...form.register('walletId')}><option value="">Selecione a carteira</option>{wallets.data?.pages.flatMap((page) => page.items).filter((wallet) => wallet.type !== 'PLATFORM').map((wallet) => <option key={wallet.id} value={wallet.id}>{wallet.ownerName} · {wallet.type === 'DRIVER' ? 'Entregador' : 'Empresa'} · {formatCurrency(wallet.balanceCents)} · {wallet.id.slice(0, 8)}</option>)}</Select>
         </FormField>
+        {wallets.hasNextPage && <Button type="button" onClick={() => void wallets.fetchNextPage()} loading={wallets.isFetchingNextPage}>Carregar mais carteiras</Button>}
         <FormField
           id="adjust-amount"
           label="Valor em centavos"

@@ -1,15 +1,18 @@
 'use client';
 import Link from 'next/link';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
-import { PageHeader, Card, Table, StatusBadge } from '@/components/ui';
-import { ErrorState, LoadingState, EmptyState, UnavailableFeature } from '@/components/feedback';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { PageHeader, Card, Table, StatusBadge, Button } from '@/components/ui';
+import { ErrorState, LoadingState, EmptyState } from '@/components/feedback';
+import { AccountSettings } from '@/features/auth/account-settings';
 import { useAuth } from '@/providers/auth-provider';
 import { useNotify } from '@/providers/notification-provider';
 import { businessApi } from '@/services/api/business.api';
 import { formatDate } from '@/lib/format';
 import { BusinessForm, BranchForm } from './forms';
 import { useBusiness, useBranches } from './queries';
+import type { Branch } from './types';
 export function BusinessProfile() {
   const { user } = useAuth();
   const query = useBusiness();
@@ -27,11 +30,8 @@ export function BusinessProfile() {
           <dt>Perfil</dt>
           <dd>{user?.role && <StatusBadge status={user.role} />}</dd>
         </dl>
-        <UnavailableFeature
-          title="Alterar conta e segurança"
-          description="A API atual não oferece edição do usuário, troca de senha ou gerenciamento de sessões."
-        />
       </Card>
+      <AccountSettings />
       {!user?.businessId ? (
         <EmptyState title="Empresa não cadastrada">
           <Link href="/app/onboarding">Cadastrar empresa</Link>
@@ -84,6 +84,9 @@ export function BusinessProfile() {
 export function BranchesPage() {
   const { user } = useAuth();
   const query = useBranches();
+  const client = useQueryClient();
+  const [editing, setEditing] = useState<Branch | null>(null);
+  const mutation = useMutation({ mutationFn: (branch: Branch) => businessApi.updateBranch(branch.businessId, branch.id, { active: !branch.active }), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['business'] }); } });
   return (
     <>
       <PageHeader title="Unidades" description="Pontos de coleta cadastrados na empresa.">
@@ -106,6 +109,7 @@ export function BranchesPage() {
               <th scope="col">Localização</th>
               <th scope="col">Situação</th>
               <th scope="col">Fuso horário</th>
+              {user.role === 'BUSINESS_OWNER' && <th scope="col">Ações</th>}
             </tr>
           </thead>
           <tbody>
@@ -118,6 +122,7 @@ export function BranchesPage() {
                 </td>
                 <td>{branch.active ? 'Ativa' : 'Inativa'}</td>
                 <td>{branch.timezone}</td>
+                {user.role === 'BUSINESS_OWNER' && <td><Button onClick={() => setEditing(branch)}>Editar</Button><Button loading={mutation.isPending} onClick={() => mutation.mutate(branch)}>{branch.active ? 'Desativar' : 'Ativar'}</Button></td>}
               </tr>
             ))}
           </tbody>
@@ -127,7 +132,9 @@ export function BranchesPage() {
           <Link href="/app/unidades/nova">Cadastrar primeira unidade</Link>
         </EmptyState>
       )}
-      <p>A API retorna até 100 unidades. Edição e desativação não estão disponíveis nesta integração.</p>
+      {mutation.isError && <ErrorState error={mutation.error} />}
+      {editing && <Card title={`Editar ${editing.name}`}><BranchForm key={editing.id} initialValues={editing} submitLabel="Salvar unidade" onSubmit={async (values) => { await businessApi.updateBranch(editing.businessId, editing.id, values); await client.invalidateQueries({ queryKey: ['business'] }); setEditing(null); }} /><Button onClick={() => setEditing(null)}>Cancelar edição</Button></Card>}
+      <p>Até 100 unidades por empresa. Alterações de endereço valem para novas entregas; entregas existentes mantêm o ponto de coleta registrado.</p>
     </>
   );
 }

@@ -1,14 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui';
-import { ErrorState, LoadingState, UnavailableFeature } from '@/components/feedback';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Button, FormField, Textarea } from '@/components/ui';
+import { ErrorState, LoadingState } from '@/components/feedback';
 import { statusLabel } from '@/constants/status';
 import { formatDate } from '@/lib/format';
 import { adminApi } from '@/services/api/admin.api';
 import { AdminRecordList, EntityLink, RecordFields } from './shared';
 import type { AdminIncident } from './types';
+function ResolveIncident({ incident }: { incident: AdminIncident }) {
+  const [resolution, setResolution] = useState('');
+  const client = useQueryClient();
+  const mutation = useMutation({ mutationFn: () => adminApi.resolveIncident(incident.deliveryId, incident.id, resolution.trim()), onSuccess: async () => { await client.invalidateQueries({ queryKey: ['admin', 'incidents'] }); } });
+  if (incident.resolvedAt) return <span>Resolvido</span>;
+  return <details><summary>Resolver incidente</summary><form onSubmit={(event) => { event.preventDefault(); if (resolution.trim().length >= 3) mutation.mutate(); }}><FormField id={`resolution-${incident.id}`} label="Como o incidente foi resolvido"><Textarea value={resolution} minLength={3} maxLength={2000} required onChange={(event) => setResolution(event.target.value)} /></FormField><p>A resolução fica registrada na auditoria e não altera o estado da entrega.</p><Button type="submit" loading={mutation.isPending}>Registrar resolução</Button></form>{mutation.isError && <ErrorState error={mutation.error} />}</details>;
+}
 
 function IncidentContext({ deliveryId }: { deliveryId: string }) {
   const [opened, setOpened] = useState(false);
@@ -67,6 +74,7 @@ export function AdminIncidents() {
             incident.resolvedAt ? `Resolvido em ${formatDate(incident.resolvedAt)}` : 'Em aberto',
         },
         { title: 'Resolução', render: (incident) => incident.resolution ?? 'Não registrada' },
+        { title: 'Ações', render: (incident) => <ResolveIncident incident={incident} /> },
         {
           title: 'Referências de anexos',
           render: (incident) =>
@@ -81,11 +89,6 @@ export function AdminIncidents() {
             ),
         },
       ]}
-    >
-      <UnavailableFeature
-        title="Resolver incidente"
-        description="O backend disponibiliza consulta e registro de incidentes, mas não oferece endpoint administrativo para resolução ou edição."
-      />
-    </AdminRecordList>
+    />
   );
 }

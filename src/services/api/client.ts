@@ -33,7 +33,12 @@ export async function requestJson<T>(url: string, init?: RequestInit): Promise<T
       ...init,
       credentials: 'same-origin',
       cache: 'no-store',
-      headers: { ...(init?.body ? { 'Content-Type': 'application/json' } : {}), ...init?.headers },
+      headers: {
+        ...(init?.body && !(init.body instanceof FormData)
+          ? { 'Content-Type': 'application/json' }
+          : {}),
+        ...init?.headers,
+      },
     });
   } catch {
     throw new ApiError('NETWORK_ERROR', 0, messages.NETWORK_ERROR);

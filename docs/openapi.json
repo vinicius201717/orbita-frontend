@@ -10,7 +10,9 @@
             "description": ""
           }
         },
-        "tags": ["Health"]
+        "tags": [
+          "Health"
+        ]
       }
     },
     "/api/v1/health": {
@@ -22,7 +24,9 @@
             "description": ""
           }
         },
-        "tags": ["Health"]
+        "tags": [
+          "Health"
+        ]
       }
     },
     "/api/v1/health/ready": {
@@ -34,7 +38,9 @@
             "description": ""
           }
         },
-        "tags": ["Health"]
+        "tags": [
+          "Health"
+        ]
       }
     },
     "/api/v1/users/me/privacy/requests": {
@@ -61,7 +67,9 @@
             "bearer": []
           }
         ],
-        "tags": ["privacy"]
+        "tags": [
+          "privacy"
+        ]
       },
       "get": {
         "operationId": "PrivacyController_list",
@@ -76,7 +84,9 @@
             "bearer": []
           }
         ],
-        "tags": ["privacy"]
+        "tags": [
+          "privacy"
+        ]
       }
     },
     "/api/v1/metrics": {
@@ -93,7 +103,285 @@
             "bearer": []
           }
         ],
-        "tags": ["observability"]
+        "tags": [
+          "observability"
+        ]
+      }
+    },
+    "/api/v1/documents/policy": {
+      "get": {
+        "operationId": "DocumentsController_policy",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/documents": {
+      "get": {
+        "operationId": "DocumentsController_list",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BUSINESS",
+                "DRIVER"
+              ]
+            }
+          },
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "documents"
+        ]
+      },
+      "post": {
+        "operationId": "DocumentsController_upload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file",
+                  "entityType",
+                  "entityId",
+                  "type"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "enum": [
+                      "BUSINESS",
+                      "DRIVER"
+                    ]
+                  },
+                  "entityId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "expiresAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "replacesId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/documents/{id}/content": {
+      "get": {
+        "operationId": "DocumentsController_content",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/documents/{id}/review": {
+      "patch": {
+        "operationId": "DocumentsController_review",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "AuthController_me",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "auth"
+        ]
+      },
+      "patch": {
+        "operationId": "AuthController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "operationId": "AuthController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "auth"
+        ]
       }
     },
     "/api/v1/auth/register": {
@@ -115,7 +403,9 @@
             "description": ""
           }
         },
-        "tags": ["auth"]
+        "tags": [
+          "auth"
+        ]
       }
     },
     "/api/v1/auth/login": {
@@ -137,7 +427,9 @@
             "description": ""
           }
         },
-        "tags": ["auth"]
+        "tags": [
+          "auth"
+        ]
       }
     },
     "/api/v1/auth/refresh": {
@@ -159,7 +451,9 @@
             "description": ""
           }
         },
-        "tags": ["auth"]
+        "tags": [
+          "auth"
+        ]
       }
     },
     "/api/v1/auth/logout": {
@@ -186,7 +480,9 @@
             "bearer": []
           }
         ],
-        "tags": ["auth"]
+        "tags": [
+          "auth"
+        ]
       }
     },
     "/api/v1/businesses": {
@@ -213,7 +509,9 @@
             "bearer": []
           }
         ],
-        "tags": ["businesses"]
+        "tags": [
+          "businesses"
+        ]
       }
     },
     "/api/v1/businesses/{id}": {
@@ -239,7 +537,9 @@
             "bearer": []
           }
         ],
-        "tags": ["businesses"]
+        "tags": [
+          "businesses"
+        ]
       },
       "patch": {
         "operationId": "BusinessesController_patch",
@@ -273,7 +573,9 @@
             "bearer": []
           }
         ],
-        "tags": ["businesses"]
+        "tags": [
+          "businesses"
+        ]
       }
     },
     "/api/v1/businesses/{id}/branches": {
@@ -309,7 +611,9 @@
             "bearer": []
           }
         ],
-        "tags": ["businesses"]
+        "tags": [
+          "businesses"
+        ]
       },
       "get": {
         "operationId": "BusinessesController_branches",
@@ -333,7 +637,55 @@
             "bearer": []
           }
         ],
-        "tags": ["businesses"]
+        "tags": [
+          "businesses"
+        ]
+      }
+    },
+    "/api/v1/businesses/{id}/branches/{branchId}": {
+      "patch": {
+        "operationId": "BusinessesController_updateBranch",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "branchId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBranchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "businesses"
+        ]
       }
     },
     "/api/v1/deliveries": {
@@ -370,7 +722,9 @@
           }
         ],
         "summary": "Create an independent delivery in the pool",
-        "tags": ["deliveries"]
+        "tags": [
+          "deliveries"
+        ]
       },
       "get": {
         "operationId": "DeliveriesController_list",
@@ -467,7 +821,9 @@
           }
         ],
         "summary": "List authorized deliveries using a cursor",
-        "tags": ["deliveries"]
+        "tags": [
+          "deliveries"
+        ]
       }
     },
     "/api/v1/deliveries/{id}": {
@@ -493,7 +849,9 @@
             "bearer": []
           }
         ],
-        "tags": ["deliveries"]
+        "tags": [
+          "deliveries"
+        ]
       },
       "patch": {
         "operationId": "DeliveriesController_update",
@@ -527,7 +885,9 @@
             "bearer": []
           }
         ],
-        "tags": ["deliveries"]
+        "tags": [
+          "deliveries"
+        ]
       }
     },
     "/api/v1/deliveries/{id}/customer-code": {
@@ -554,7 +914,9 @@
           }
         ],
         "summary": "Rotate and reveal an offline customer PIN only to the business before assignment; hand it privately to the customer",
-        "tags": ["deliveries"]
+        "tags": [
+          "deliveries"
+        ]
       }
     },
     "/api/v1/deliveries/{id}/ready": {
@@ -580,7 +942,9 @@
             "bearer": []
           }
         ],
-        "tags": ["deliveries"]
+        "tags": [
+          "deliveries"
+        ]
       }
     },
     "/api/v1/deliveries/{id}/verify": {
@@ -617,7 +981,9 @@
           }
         ],
         "summary": "Confirm delivery using the recipient PIN and credit the ledger atomically",
-        "tags": ["deliveries"]
+        "tags": [
+          "deliveries"
+        ]
       }
     },
     "/api/v1/deliveries/{id}/confirm": {
@@ -654,7 +1020,9 @@
           }
         ],
         "summary": "Confirm receipt using a private customer token",
-        "tags": ["deliveries"]
+        "tags": [
+          "deliveries"
+        ]
       },
       "get": {
         "operationId": "DeliveriesController_confirmationPage",
@@ -679,7 +1047,9 @@
           }
         ],
         "summary": "Customer receipt page; private token remains in the URL fragment",
-        "tags": ["deliveries"]
+        "tags": [
+          "deliveries"
+        ]
       }
     },
     "/api/v1/deliveries/{id}/tracking": {
@@ -716,7 +1086,9 @@
           }
         ],
         "summary": "Customer delivery status and ETA using a private token",
-        "tags": ["deliveries"]
+        "tags": [
+          "deliveries"
+        ]
       }
     },
     "/api/v1/driver/wallet": {
@@ -733,7 +1105,9 @@
             "bearer": []
           }
         ],
-        "tags": ["finance"]
+        "tags": [
+          "finance"
+        ]
       }
     },
     "/api/v1/driver/earnings": {
@@ -750,7 +1124,9 @@
             "bearer": []
           }
         ],
-        "tags": ["finance"]
+        "tags": [
+          "finance"
+        ]
       }
     },
     "/api/v1/business/billing": {
@@ -767,7 +1143,9 @@
             "bearer": []
           }
         ],
-        "tags": ["finance"]
+        "tags": [
+          "finance"
+        ]
       }
     },
     "/api/v1/driver/me": {
@@ -784,7 +1162,9 @@
             "bearer": []
           }
         ],
-        "tags": ["driver"]
+        "tags": [
+          "driver"
+        ]
       }
     },
     "/api/v1/driver/me/status": {
@@ -811,7 +1191,9 @@
             "bearer": []
           }
         ],
-        "tags": ["driver"]
+        "tags": [
+          "driver"
+        ]
       }
     },
     "/api/v1/driver/consent": {
@@ -838,7 +1220,9 @@
             "bearer": []
           }
         ],
-        "tags": ["driver"]
+        "tags": [
+          "driver"
+        ]
       }
     },
     "/api/v1/driver/vehicles": {
@@ -865,7 +1249,9 @@
             "bearer": []
           }
         ],
-        "tags": ["driver"]
+        "tags": [
+          "driver"
+        ]
       }
     },
     "/api/v1/driver/location": {
@@ -892,7 +1278,9 @@
             "bearer": []
           }
         ],
-        "tags": ["driver"]
+        "tags": [
+          "driver"
+        ]
       }
     },
     "/api/v1/driver/heartbeat": {
@@ -919,7 +1307,54 @@
             "bearer": []
           }
         ],
-        "tags": ["driver"]
+        "tags": [
+          "driver"
+        ]
+      }
+    },
+    "/api/v1/routes": {
+      "get": {
+        "operationId": "RoutesController_list",
+        "parameters": [
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BUILDING",
+                "OFFERING",
+                "ASSIGNED",
+                "ACTIVE",
+                "COMPLETED",
+                "CANCELLED",
+                "FAILED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "routes"
+        ]
       }
     },
     "/api/v1/routes/{id}": {
@@ -946,7 +1381,9 @@
           }
         ],
         "summary": "Read an authorized route; businesses see only their own deliveries",
-        "tags": ["routes"]
+        "tags": [
+          "routes"
+        ]
       }
     },
     "/api/v1/routes/{id}/start": {
@@ -972,7 +1409,9 @@
             "bearer": []
           }
         ],
-        "tags": ["routes"]
+        "tags": [
+          "routes"
+        ]
       }
     },
     "/api/v1/routes/{id}/stops/{stopId}/arrive": {
@@ -1006,7 +1445,9 @@
             "bearer": []
           }
         ],
-        "tags": ["routes"]
+        "tags": [
+          "routes"
+        ]
       }
     },
     "/api/v1/routes/{id}/stops/{stopId}/complete": {
@@ -1041,7 +1482,9 @@
           }
         ],
         "summary": "Complete pickup; dropoff completion requires recipient proof",
-        "tags": ["routes"]
+        "tags": [
+          "routes"
+        ]
       }
     },
     "/api/v1/routes/{id}/finish": {
@@ -1067,7 +1510,9 @@
             "bearer": []
           }
         ],
-        "tags": ["routes"]
+        "tags": [
+          "routes"
+        ]
       }
     },
     "/api/v1/driver/offers": {
@@ -1084,7 +1529,9 @@
             "bearer": []
           }
         ],
-        "tags": ["offers"]
+        "tags": [
+          "offers"
+        ]
       }
     },
     "/api/v1/driver/offers/{id}/accept": {
@@ -1110,7 +1557,9 @@
             "bearer": []
           }
         ],
-        "tags": ["offers"]
+        "tags": [
+          "offers"
+        ]
       }
     },
     "/api/v1/driver/offers/{id}/reject": {
@@ -1136,7 +1585,9 @@
             "bearer": []
           }
         ],
-        "tags": ["offers"]
+        "tags": [
+          "offers"
+        ]
       }
     },
     "/api/v1/webhooks/whatsapp": {
@@ -1148,7 +1599,9 @@
             "description": ""
           }
         },
-        "tags": ["whatsapp"]
+        "tags": [
+          "whatsapp"
+        ]
       },
       "post": {
         "operationId": "WhatsAppController_receive",
@@ -1158,7 +1611,57 @@
             "description": ""
           }
         },
-        "tags": ["whatsapp"]
+        "tags": [
+          "whatsapp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/me": {
+      "get": {
+        "operationId": "WhatsAppAccountController_status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "whatsapp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/me/consent": {
+      "post": {
+        "operationId": "WhatsAppAccountController_consent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WhatsAppConsentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "whatsapp"
+        ]
       }
     },
     "/api/v1/deliveries/{id}/cancel": {
@@ -1194,7 +1697,9 @@
             "bearer": []
           }
         ],
-        "tags": ["incidents"]
+        "tags": [
+          "incidents"
+        ]
       }
     },
     "/api/v1/deliveries/{id}/return": {
@@ -1220,7 +1725,9 @@
             "bearer": []
           }
         ],
-        "tags": ["incidents"]
+        "tags": [
+          "incidents"
+        ]
       }
     },
     "/api/v1/deliveries/{id}/return/complete": {
@@ -1246,7 +1753,9 @@
             "bearer": []
           }
         ],
-        "tags": ["incidents"]
+        "tags": [
+          "incidents"
+        ]
       }
     },
     "/api/v1/deliveries/{id}/incidents": {
@@ -1282,7 +1791,9 @@
             "bearer": []
           }
         ],
-        "tags": ["incidents"]
+        "tags": [
+          "incidents"
+        ]
       },
       "get": {
         "operationId": "IncidentsController_list",
@@ -1306,7 +1817,55 @@
             "bearer": []
           }
         ],
-        "tags": ["incidents"]
+        "tags": [
+          "incidents"
+        ]
+      }
+    },
+    "/api/v1/deliveries/{id}/incidents/{incidentId}/resolve": {
+      "patch": {
+        "operationId": "IncidentsController_resolve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "incidentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveIncidentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "incidents"
+        ]
       }
     },
     "/api/v1/analytics/business/overview": {
@@ -1323,7 +1882,9 @@
             "bearer": []
           }
         ],
-        "tags": ["analytics"]
+        "tags": [
+          "analytics"
+        ]
       }
     },
     "/api/v1/analytics/driver/overview": {
@@ -1340,7 +1901,9 @@
             "bearer": []
           }
         ],
-        "tags": ["analytics"]
+        "tags": [
+          "analytics"
+        ]
       }
     },
     "/api/v1/analytics/platform/overview": {
@@ -1357,7 +1920,84 @@
             "bearer": []
           }
         ],
-        "tags": ["analytics"]
+        "tags": [
+          "analytics"
+        ]
+      }
+    },
+    "/api/v1/admin/drivers/{id}": {
+      "get": {
+        "operationId": "AdminController_driverDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/wallets": {
+      "get": {
+        "operationId": "AdminController_wallets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/wallets/{id}": {
+      "get": {
+        "operationId": "AdminController_walletDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/api/v1/admin/drivers/{id}/review": {
@@ -1393,7 +2033,9 @@
             "bearer": []
           }
         ],
-        "tags": ["admin"]
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/api/v1/admin/whatsapp-identities": {
@@ -1405,7 +2047,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IdentityDto"
+                "$ref": "#/components/schemas/AdminWhatsAppIdentityDto"
               }
             }
           }
@@ -1420,7 +2062,9 @@
             "bearer": []
           }
         ],
-        "tags": ["admin"]
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/api/v1/admin/deliveries/{id}/confirm": {
@@ -1456,7 +2100,9 @@
             "bearer": []
           }
         ],
-        "tags": ["admin"]
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/api/v1/admin/deliveries/{id}/reassign": {
@@ -1492,7 +2138,9 @@
             "bearer": []
           }
         ],
-        "tags": ["admin"]
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/api/v1/admin/finance/adjustments": {
@@ -1519,7 +2167,9 @@
             "bearer": []
           }
         ],
-        "tags": ["admin"]
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/api/v1/admin/service-zones": {
@@ -1546,7 +2196,9 @@
             "bearer": []
           }
         ],
-        "tags": ["admin"]
+        "tags": [
+          "admin"
+        ]
       },
       "get": {
         "operationId": "AdminController_zonesList",
@@ -1561,7 +2213,9 @@
             "bearer": []
           }
         ],
-        "tags": ["admin"]
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/api/v1/admin/matching/run": {
@@ -1578,7 +2232,9 @@
             "bearer": []
           }
         ],
-        "tags": ["admin"]
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/api/v1/admin/matching-config": {
@@ -1595,7 +2251,9 @@
             "bearer": []
           }
         ],
-        "tags": ["admin"]
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/api/v1/admin/pricing-rules": {
@@ -1612,7 +2270,9 @@
             "bearer": []
           }
         ],
-        "tags": ["admin"]
+        "tags": [
+          "admin"
+        ]
       }
     },
     "/api/v1/admin/{resource}": {
@@ -1638,7 +2298,9 @@
             "bearer": []
           }
         ],
-        "tags": ["admin"]
+        "tags": [
+          "admin"
+        ]
       }
     }
   },
@@ -1664,10 +2326,108 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["EXPORT", "DELETE"]
+            "enum": [
+              "EXPORT",
+              "DELETE"
+            ]
           }
         },
-        "required": ["type"]
+        "required": [
+          "type"
+        ]
+      },
+      "ReviewDocumentDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "APPROVED",
+              "REJECTED"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "notes"
+        ]
+      },
+      "IdentityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "ADMIN",
+              "BUSINESS_OWNER",
+              "BUSINESS_STAFF",
+              "DRIVER"
+            ]
+          },
+          "businessId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "driverId": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "role",
+          "businessId",
+          "driverId",
+          "phone"
+        ]
+      },
+      "UpdateAccountDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          }
+        }
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
       },
       "RegisterDto": {
         "type": "object",
@@ -1683,13 +2443,22 @@
           },
           "role": {
             "type": "string",
-            "enum": ["BUSINESS_OWNER", "DRIVER"]
+            "enum": [
+              "BUSINESS_OWNER",
+              "DRIVER"
+            ]
           },
           "phone": {
             "type": "string"
           }
         },
-        "required": ["email", "password", "name", "role", "phone"]
+        "required": [
+          "email",
+          "password",
+          "name",
+          "role",
+          "phone"
+        ]
       },
       "LoginDto": {
         "type": "object",
@@ -1701,7 +2470,10 @@
             "type": "string"
           }
         },
-        "required": ["email", "password"]
+        "required": [
+          "email",
+          "password"
+        ]
       },
       "RefreshDto": {
         "type": "object",
@@ -1710,7 +2482,9 @@
             "type": "string"
           }
         },
-        "required": ["refreshToken"]
+        "required": [
+          "refreshToken"
+        ]
       },
       "CreateBusinessDto": {
         "type": "object",
@@ -1732,10 +2506,21 @@
           },
           "category": {
             "type": "string",
-            "enum": ["FOOD", "PHARMACY", "BEVERAGE_DISTRIBUTOR"]
+            "enum": [
+              "FOOD",
+              "PHARMACY",
+              "BEVERAGE_DISTRIBUTOR"
+            ]
           }
         },
-        "required": ["legalName", "tradeName", "document", "phone", "email", "category"]
+        "required": [
+          "legalName",
+          "tradeName",
+          "document",
+          "phone",
+          "email",
+          "category"
+        ]
       },
       "UpdateBusinessDto": {
         "type": "object",
@@ -1757,7 +2542,11 @@
           },
           "category": {
             "type": "string",
-            "enum": ["FOOD", "PHARMACY", "BEVERAGE_DISTRIBUTOR"]
+            "enum": [
+              "FOOD",
+              "PHARMACY",
+              "BEVERAGE_DISTRIBUTOR"
+            ]
           }
         }
       },
@@ -1780,7 +2569,35 @@
             "type": "string"
           }
         },
-        "required": ["name", "address", "latitude", "longitude"]
+        "required": [
+          "name",
+          "address",
+          "latitude",
+          "longitude"
+        ]
+      },
+      "UpdateBranchDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          }
+        }
       },
       "CustomerDto": {
         "type": "object",
@@ -1795,7 +2612,9 @@
             "type": "boolean"
           }
         },
-        "required": ["name"]
+        "required": [
+          "name"
+        ]
       },
       "DropoffDto": {
         "type": "object",
@@ -1810,7 +2629,10 @@
             "type": "string"
           }
         },
-        "required": ["latitude", "longitude"]
+        "required": [
+          "latitude",
+          "longitude"
+        ]
       },
       "CreateDeliveryDto": {
         "type": "object",
@@ -1867,7 +2689,12 @@
             "type": "string"
           }
         },
-        "required": ["branchId", "customer", "dropoff", "items"]
+        "required": [
+          "branchId",
+          "customer",
+          "dropoff",
+          "items"
+        ]
       },
       "UpdateDeliveryDto": {
         "type": "object",
@@ -1896,7 +2723,9 @@
             "type": "number"
           }
         },
-        "required": ["code"]
+        "required": [
+          "code"
+        ]
       },
       "ConfirmDeliveryDto": {
         "type": "object",
@@ -1905,17 +2734,26 @@
             "type": "string"
           }
         },
-        "required": ["token"]
+        "required": [
+          "token"
+        ]
       },
       "DriverStatusDto": {
         "type": "object",
         "properties": {
           "status": {
             "type": "string",
-            "enum": ["OFFLINE", "AVAILABLE", "ON_ROUTE", "PAUSED"]
+            "enum": [
+              "OFFLINE",
+              "AVAILABLE",
+              "ON_ROUTE",
+              "PAUSED"
+            ]
           }
         },
-        "required": ["status"]
+        "required": [
+          "status"
+        ]
       },
       "ConsentDto": {
         "type": "object",
@@ -1924,14 +2762,21 @@
             "type": "boolean"
           }
         },
-        "required": ["granted"]
+        "required": [
+          "granted"
+        ]
       },
       "VehicleDto": {
         "type": "object",
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["MOTORCYCLE", "CAR", "UTILITY", "VAN"]
+            "enum": [
+              "MOTORCYCLE",
+              "CAR",
+              "UTILITY",
+              "VAN"
+            ]
           },
           "plate": {
             "type": "string"
@@ -1958,11 +2803,24 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": ["HOT", "COLD", "FROZEN", "AMBIENT", "FRAGILE", "BEVERAGE", "MEDICINE", "OTHER"]
+              "enum": [
+                "HOT",
+                "COLD",
+                "FROZEN",
+                "AMBIENT",
+                "FRAGILE",
+                "BEVERAGE",
+                "MEDICINE",
+                "OTHER"
+              ]
             }
           }
         },
-        "required": ["type", "plate", "capacityUnits"]
+        "required": [
+          "type",
+          "plate",
+          "capacityUnits"
+        ]
       },
       "LocationDto": {
         "type": "object",
@@ -1987,7 +2845,22 @@
             "type": "string"
           }
         },
-        "required": ["latitude", "longitude", "timestamp"]
+        "required": [
+          "latitude",
+          "longitude",
+          "timestamp"
+        ]
+      },
+      "WhatsAppConsentDto": {
+        "type": "object",
+        "properties": {
+          "granted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "granted"
+        ]
       },
       "CancelDto": {
         "type": "object",
@@ -1996,7 +2869,9 @@
             "type": "string"
           }
         },
-        "required": ["reason"]
+        "required": [
+          "reason"
+        ]
       },
       "IncidentDto": {
         "type": "object",
@@ -2024,19 +2899,38 @@
             }
           }
         },
-        "required": ["type"]
+        "required": [
+          "type"
+        ]
+      },
+      "ResolveIncidentDto": {
+        "type": "object",
+        "properties": {
+          "resolution": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "resolution"
+        ]
       },
       "ApproveDriverDto": {
         "type": "object",
         "properties": {
           "status": {
             "type": "string",
-            "enum": ["PENDING", "APPROVED", "REJECTED"]
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ]
           }
         },
-        "required": ["status"]
+        "required": [
+          "status"
+        ]
       },
-      "IdentityDto": {
+      "AdminWhatsAppIdentityDto": {
         "type": "object",
         "properties": {
           "phoneNumber": {
@@ -2044,7 +2938,11 @@
           },
           "entityType": {
             "type": "string",
-            "enum": ["BUSINESS", "DRIVER", "CUSTOMER"]
+            "enum": [
+              "BUSINESS",
+              "DRIVER",
+              "CUSTOMER"
+            ]
           },
           "entityId": {
             "type": "string"
@@ -2054,7 +2952,12 @@
             "description": "Reference to recorded verification and opt-in evidence"
           }
         },
-        "required": ["phoneNumber", "entityType", "entityId", "evidence"]
+        "required": [
+          "phoneNumber",
+          "entityType",
+          "entityId",
+          "evidence"
+        ]
       },
       "AdjustmentDto": {
         "type": "object",
@@ -2072,7 +2975,12 @@
             "type": "string"
           }
         },
-        "required": ["walletId", "amountCents", "reason", "idempotencyKey"]
+        "required": [
+          "walletId",
+          "amountCents",
+          "reason",
+          "idempotencyKey"
+        ]
       },
       "ZoneDto": {
         "type": "object",
@@ -2087,7 +2995,11 @@
             "type": "object"
           }
         },
-        "required": ["name", "city", "boundary"]
+        "required": [
+          "name",
+          "city",
+          "boundary"
+        ]
       }
     }
   }

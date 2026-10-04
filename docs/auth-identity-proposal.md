@@ -1,11 +1,21 @@
-# Proposta mínima para liberar o login
+# Contrato de identidade implementado
 
-O [patch proposto](proposed-auth-me.patch) foi preparado contra o backend `8dca25a`. Ele **não foi aplicado**. A restrição do pedido original é “NÃO alterar o backend”; a decisão sobre essa alteração permanece pendente.
+Este documento era uma proposta durante a auditoria inicial. O contrato foi implementado no backend e integrado ao BFF.
 
-A mudança adiciona somente `GET /api/v1/auth/me`, protegido pelo guard de autenticação existente. Retorna `id`, `name`, `email`, `role`, `businessId`, `driverId` e `phone` opcional/nulo. Os dados vêm da conta autenticada no banco. Não recebe ID pelo cliente, não retorna hash de senha nem tokens e não altera regras logísticas.
+`GET /api/v1/auth/me` exige o token da sessão e retorna somente a identidade pública da conta autenticada:
 
-O guard já valida token, conta ativa e exclusão. O serviço seleciona explicitamente os campos públicos da própria identidade. `phone` é o telefone do entregador quando existe; não inventa um telefone pessoal para usuário empresarial.
+```ts
+{
+  id: string;
+  name: string;
+  email: string;
+  role: 'ADMIN' | 'BUSINESS_OWNER' | 'BUSINESS_STAFF' | 'DRIVER';
+  businessId: string | null;
+  driverId: string | null;
+  phone: string | null;
+}
+```
 
-Após autorização, a integração deve ser concluída com testes de autenticação ausente/inválida, quatro roles, ausência de vínculos, vínculo criado durante onboarding e conta desativada. O OpenAPI deve receber schema explícito da resposta e um snapshot atualizado. Só então configurar `BACKEND_IDENTITY_PATH=/auth/me` e repetir login, cadastro, refresh e logout reais nos três perfis. O patch é uma proposta revisável, não uma alteração homologada do backend.
+O backend seleciona os campos explicitamente e valida conta ativa, exclusão e versão de autenticação. O endpoint não recebe um ID do cliente, não retorna hash de senha e não expõe tokens.
 
-As fixtures em `tests/e2e/local-fixture.ts` não substituem esse endpoint. Elas são restritas aos testes locais e nunca são importadas pelo produto.
+O frontend usa o mesmo contrato depois de `POST /api/session/login`. `PATCH /api/v1/auth/me` atualiza nome e telefone; `POST /api/v1/auth/change-password` verifica a senha atual, incrementa a versão de autenticação, revoga refresh tokens e encerra sessões anteriores. As regressões estão em `test/integration/frontend-identity.spec.ts` no backend.
