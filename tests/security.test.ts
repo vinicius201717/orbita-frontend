@@ -31,6 +31,12 @@ describe('session and BFF boundaries', () => {
     expect(sameOrigin(new Request('http://localhost:3001/api'), 'http://localhost:3001')).toBe(false);
   });
   it('allows real domain operations and blocks auth, unknown resources and traversal', () => {
+    expect(allowedEndpoint('/business/products', 'POST')).toBe(true);
+    expect(allowedEndpoint('/business/products/' + id, 'PATCH')).toBe(true);
+    expect(allowedEndpoint('/business/orders', 'POST')).toBe(true);
+    expect(allowedEndpoint('/business/orders/summary', 'GET')).toBe(true);
+    expect(allowedEndpoint('/business/addresses/search', 'POST')).toBe(true);
+    expect(allowedEndpoint('/business/products/' + id, 'DELETE')).toBe(false);
     expect(allowedEndpoint('/deliveries/' + id + '/ready', 'POST')).toBe(true);
     expect(allowedEndpoint('/admin/deliveries/' + id + '/confirm', 'POST')).toBe(true);
     expect(allowedEndpoint('/admin/drivers', 'GET')).toBe(true);

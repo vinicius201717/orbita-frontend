@@ -60,20 +60,35 @@ export function BusinessHelp() {
   return (
     <>
       <PageHeader title="Ajuda" />
-      <Card title="Registrar uma entrega">
+      <Card title="Cadastrar produtos e lanches">
         <p>
-          Cadastre a unidade, informe os dados do cliente e a localização de destino, adicione os itens e
-          revise o pedido. Após o preparo, use “Marcar como pronto para coleta”.
+          Em Produtos, informe nome, preço e categoria. Quando um item acabar, pause sua disponibilidade.
+          Os pedidos antigos mantêm o nome e o preço que tinham quando foram criados.
         </p>
-        <Link href="/app/entregas/nova">Nova entrega</Link>
+        <Link href="/app/produtos">Abrir meu catálogo</Link>
+      </Card>
+      <Card title="Montar um pedido">
+        <p>
+          Clique em Novo pedido, escolha os produtos e as quantidades, informe o cliente e confirme o
+          endereço. Revise tudo e confirme. Quando terminar o preparo, use “Marcar como pronto”. A
+          entrega fica vinculada ao pedido.
+        </p>
+        <Link href="/app/pedidos/novo">Novo pedido</Link>
+      </Card>
+      <Card title="Confirmar o endereço">
+        <p>
+          Informe rua, número, bairro e cidade e busque o endereço. Confira o ponto antes de selecionar.
+          Se a busca não estiver ativada, abra o Google Maps e copie as coordenadas do ponto exato na
+          opção “Usar um ponto do Google Maps”. Não use a localização da loja como destino do cliente.
+        </p>
       </Card>
       <Card title="Acompanhar e cancelar">
         <p>
-          Abra o detalhe de uma entrega para acompanhar os horários e registrar incidentes. O backend
-          confirma se o cancelamento é permitido e, quando necessário, mantém o processo de devolução da
-          carga.
+          Use os filtros em Pedidos para ver o que está em preparo, pronto ou a caminho. No detalhe do
+          pedido você pode cancelar antes da coleta. Depois que o entregador retirar o pedido, a
+          solicitação inicia uma devolução.
         </p>
-        <Link href="/app/entregas">Ver entregas</Link>
+        <Link href="/app/pedidos">Ver pedidos</Link>
       </Card>
       <Card title="Código de confirmação">
         <p>

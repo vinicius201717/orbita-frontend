@@ -2,8 +2,9 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Button, FormField, Input, Select, Textarea } from '@/components/ui';
+import { Button, FormField, Input, Select } from '@/components/ui';
 import { ErrorState } from '@/components/feedback';
+import { DeliveryAddressField, type DeliveryAddress } from '@/features/orders-address/address-field';
 import { businessSchema, branchSchema, type BusinessInput, type BranchInput } from './schemas';
 export type { BusinessInput, BranchInput } from './schemas';
 type Props<T> = {
@@ -82,9 +83,19 @@ export function BranchForm({
   submitLabel = 'Cadastrar unidade',
 }: Props<BranchInput>) {
   const [error, setError] = useState<unknown>(null);
+  const [location, setLocation] = useState<DeliveryAddress | null>(
+    initialValues?.address && initialValues.latitude != null && initialValues.longitude != null
+      ? {
+          address: initialValues.address,
+          latitude: initialValues.latitude,
+          longitude: initialValues.longitude,
+        }
+      : null,
+  );
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<BranchInput>({
     resolver: zodResolver(branchSchema),
@@ -92,53 +103,50 @@ export function BranchForm({
   });
   return (
     <form
-      onSubmit={handleSubmit(async (values) => {
-        setError(null);
-        try {
-          await onSubmit(values);
-        } catch (cause) {
-          setError(cause);
-        }
-      })}
       noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!location) {
+          setError(new Error('Confirme o endereço e o ponto de coleta antes de salvar.'));
+          return;
+        }
+        void handleSubmit(async (values) => {
+          setError(null);
+          try {
+            await onSubmit(values);
+          } catch (cause) {
+            setError(cause);
+          }
+        })(event);
+      }}
     >
       <FormField id="branchName" label="Nome da unidade" error={errors.name?.message}>
-        <Input {...register('name')} required maxLength={120} />
+        <Input {...register('name')} placeholder="Ex.: Loja Centro" required maxLength={120} />
       </FormField>
-      <FormField
-        id="branchAddress"
-        label="Endereço completo"
-        hint="Inclua rua, número, complemento, bairro, cidade, estado e CEP."
-        error={errors.address?.message}
-      >
-        <Textarea {...register('address')} autoComplete="street-address" required maxLength={300} />
-      </FormField>
-      <p>
-        A localização deve corresponder ao ponto de coleta. A busca automática de endereços não está
-        disponível nesta integração.
-      </p>
-      <FormField id="branchLatitude" label="Latitude" error={errors.latitude?.message}>
-        <Input
-          {...register('latitude', { valueAsNumber: true })}
-          type="number"
-          step="any"
-          min={-90}
-          max={90}
-          required
-        />
-      </FormField>
-      <FormField id="branchLongitude" label="Longitude" error={errors.longitude?.message}>
-        <Input
-          {...register('longitude', { valueAsNumber: true })}
-          type="number"
-          step="any"
-          min={-180}
-          max={180}
-          required
-        />
-      </FormField>
-      <FormField id="branchTimezone" label="Fuso horário" error={errors.timezone?.message}>
-        <Input {...register('timezone')} required />
+      <DeliveryAddressField
+        label="Endereço da unidade de coleta"
+        value={location}
+        onChange={(value) => {
+          setLocation(value);
+          setError(null);
+          if (value) {
+            setValue('address', value.address, { shouldValidate: true });
+            setValue('latitude', value.latitude, { shouldValidate: true });
+            setValue('longitude', value.longitude, { shouldValidate: true });
+          }
+        }}
+      />
+      <FormField id="branchTimezone" label="Fuso horário da loja" error={errors.timezone?.message}>
+        <Select {...register('timezone')}>
+          <option value="America/Sao_Paulo">Horário de Brasília</option>
+          <option value="America/Manaus">Horário de Manaus</option>
+          <option value="America/Rio_Branco">Horário do Acre</option>
+          <option value="America/Noronha">Horário de Fernando de Noronha</option>
+          {initialValues?.timezone &&
+            !['America/Sao_Paulo', 'America/Manaus', 'America/Rio_Branco', 'America/Noronha'].includes(
+              initialValues.timezone,
+            ) && <option value={initialValues.timezone}>{initialValues.timezone}</option>}
+        </Select>
       </FormField>
       {!!error && <ErrorState error={error} />}
       <Button type="submit" loading={isSubmitting}>

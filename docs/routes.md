@@ -18,6 +18,8 @@ Paths REST desta tabela são relativos a `BACKEND_API_URL` (`/api/v1`). “Integ
 
 ## Empresa
 
+O [painel do estabelecimento](merchant-panel.md) inclui `/app/produtos`, `/app/pedidos`, `/app/pedidos/novo` e `/app/pedidos/[id]`, integrados a `/business/products` e `/business/orders`. O resumo de `/app` usa `/business/orders/summary` e pedidos recentes. Cadastro de unidades e novos pedidos compartilham a busca `/business/addresses/search` (Google configurado no backend), com alternativa de confirmação manual do ponto.
+
 | URL                       | Role    | Descrição                                                | API consumida                                                                                                             | Status                                                   |
 | ------------------------- | ------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | `/app`                    | EMPRESA | Dashboard com métricas e atalhos.                        | `GET /analytics/business/overview`; dados empresariais conforme contexto.                                                 | Integrada; métricas disponíveis no contrato.             |

@@ -9,16 +9,18 @@ import { ErrorState, LoadingState } from '@/components/feedback';
 import { Logo } from '@/components/brand/logo';
 import styles from './dashboard.module.css';
 const business = [
-  ['Visão geral', '/app'],
+  ['Meu painel', '/app'],
+  ['Pedidos', '/app/pedidos'],
+  ['Novo pedido', '/app/pedidos/novo'],
+  ['Produtos', '/app/produtos'],
   ['Entregas', '/app/entregas'],
-  ['Nova entrega', '/app/entregas/nova'],
   ['Unidades', '/app/unidades'],
   ['Financeiro', '/app/financeiro'],
-  ['Analytics', '/app/analytics'],
+  ['Relatórios', '/app/analytics'],
   ['WhatsApp', '/app/whatsapp'],
   ['Perfil', '/app/perfil'],
   ['Documentos', '/app/empresa/documentos'],
-  ['Onboarding', '/app/onboarding'],
+  ['Configurar loja', '/app/onboarding'],
   ['Ajuda', '/app/ajuda'],
 ];
 const driver = [
@@ -129,7 +131,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                   onClick={() => setMenuOpen(false)}
                 >
                   <span className={styles.navSymbol} aria-hidden="true">
-                    {label === 'Nova entrega' ? '+' : '·'}
+                    {label === 'Novo pedido' ? '+' : '·'}
                   </span>
                   {label}
                 </Link>

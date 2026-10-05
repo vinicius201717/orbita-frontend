@@ -10,6 +10,17 @@ export class ApiError extends Error {
   }
 }
 const messages: Record<string, string> = {
+  PRODUCT_UNAVAILABLE: 'Um dos produtos ficou indisponível. Volte e revise os itens do pedido.',
+  PRODUCT_NOT_FOUND: 'Este produto não foi encontrado na sua loja.',
+  ORDER_NOT_FOUND: 'Este pedido não foi encontrado na sua loja.',
+  BUSINESS_REQUIRED: 'Conclua o cadastro do estabelecimento para continuar.',
+  BUSINESS_UNAVAILABLE: 'Seu estabelecimento está inativo. Entre em contato com a operação.',
+  BRANCH_UNAVAILABLE: 'A unidade de coleta não está disponível. Escolha uma unidade ativa.',
+  CATALOG_LIMIT: 'Seu catálogo chegou ao limite de 500 produtos.',
+  IDEMPOTENCY_CONFLICT:
+    'Esta solicitação já foi usada em outro pedido. Volte e confira os pedidos da loja.',
+  ORDER_TOTAL_TOO_LARGE: 'O valor deste pedido ultrapassa o limite. Divida-o em pedidos menores.',
+  INVALID_CURSOR: 'A lista mudou. Atualize a página para carregar os pedidos.',
   INVALID_CREDENTIALS: 'E-mail ou senha incorretos.',
   UNAUTHORIZED: 'Sua sessão expirou. Entre novamente.',
   INVALID_REFRESH: 'Sua sessão expirou. Entre novamente.',

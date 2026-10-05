@@ -475,6 +475,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/business/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the current business catalog, including unavailable products */
+        get: operations["MerchantController_products"];
+        put?: never;
+        post: operations["MerchantController_createProduct"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/business/products/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["MerchantController_updateProduct"];
+        trace?: never;
+    };
+    "/api/v1/business/orders/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Merchant operations and sales summary; today uses America/Sao_Paulo */
+        get: operations["MerchantController_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/business/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MerchantController_orders"];
+        put?: never;
+        /** Create an order with server-priced snapshots and its delivery atomically */
+        post: operations["MerchantController_createOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/business/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["MerchantController_order"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/driver/me": {
         parameters: {
             query?: never;
@@ -663,6 +746,23 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["RoutesController_finish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/business/addresses/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Find delivery address candidates; the merchant must confirm the destination */
+        post: operations["BusinessAddressesController_search"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1225,6 +1325,46 @@ export interface components {
         ConfirmDeliveryDto: {
             token: string;
         };
+        CreateProductDto: {
+            name: string;
+            description?: Record<string, never> | null;
+            category: string;
+            priceCents: number;
+            /** @default true */
+            available: boolean;
+        };
+        UpdateProductDto: {
+            name?: string;
+            description?: Record<string, never> | null;
+            category?: string;
+            priceCents?: number;
+            /** @default true */
+            available: boolean;
+        };
+        OrderItemDto: {
+            productId: string;
+            quantity: number;
+        };
+        CreateOrderDto: {
+            branchId: string;
+            customer: components["schemas"]["CustomerDto"];
+            dropoff: components["schemas"]["DropoffDto"];
+            address: string;
+            notes?: string;
+            items: components["schemas"]["OrderItemDto"][];
+            /**
+             * @default SMART
+             * @enum {string}
+             */
+            serviceLevel: "ECONOMY" | "SMART" | "EXPRESS";
+            /**
+             * @default AMBIENT
+             * @enum {string}
+             */
+            category: "HOT" | "COLD" | "FROZEN" | "AMBIENT" | "FRAGILE" | "BEVERAGE" | "MEDICINE" | "OTHER";
+            /** @default 15 */
+            preparationMinutes: number;
+        };
         DriverStatusDto: {
             /** @enum {string} */
             status: "OFFLINE" | "AVAILABLE" | "ON_ROUTE" | "PAUSED";
@@ -1252,6 +1392,10 @@ export interface components {
             speed?: number;
             heading?: number;
             timestamp: string;
+        };
+        AddressSearchDto: {
+            /** @example Avenida Paulista, 1578, São Paulo, SP */
+            address: string;
         };
         WhatsAppConsentDto: {
             granted: boolean;
@@ -2064,6 +2208,150 @@ export interface operations {
             };
         };
     };
+    MerchantController_products: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MerchantController_createProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProductDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MerchantController_updateProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProductDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MerchantController_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MerchantController_orders: {
+        parameters: {
+            query?: {
+                stage?: "preparing" | "ready" | "on-the-way" | "completed" | "attention" | "cancelled";
+                search?: string;
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MerchantController_createOrder: {
+        parameters: {
+            query?: never;
+            header: {
+                "idempotency-key": string;
+                /** @description Unique per order, 1–100 characters */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrderDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MerchantController_order: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     DriversController_me: {
         parameters: {
             query?: never;
@@ -2294,6 +2582,27 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BusinessAddressesController_search: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddressSearchDto"];
+            };
+        };
         responses: {
             201: {
                 headers: {

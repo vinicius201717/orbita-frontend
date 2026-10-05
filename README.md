@@ -93,7 +93,7 @@ A geração não substitui a revisão dos tipos manuais em `src/features/*/types
 
 O `RealtimeProvider` usa `/operations`. Ele solicita ao BFF um access token curto, mantido somente em memória pelo cliente Socket.IO, e renova a conexão antes da expiração. Refresh tokens nunca são expostos. Eventos são sinais para invalidar e buscar novamente as queries; seus payloads não se tornam o estado definitivo da tela. A reconexão também invalida o cache.
 
-GPS web é uma ação explícita em foreground. Rastreamento contínuo em segundo plano deverá ser realizado pelo futuro companion Android/iOS. Não há promessa de rastreamento confiável em PWA. Google Maps e Waze são apenas links externos com coordenadas autorizadas.
+GPS web é uma ação explícita em foreground. Rastreamento contínuo em segundo plano deverá ser realizado pelo futuro companion Android/iOS. Não há promessa de rastreamento confiável em PWA. A navegação abre links Google Maps/Waze com coordenadas autorizadas. O formulário de endereço consulta o Google pelo backend quando configurado e oferece confirmação manual do ponto quando a busca está indisponível.
 
 ## Comandos e verificação
 
@@ -113,6 +113,8 @@ Para Playwright, instale Chromium com `npx playwright install chromium` ou defin
 
 Os testes operacionais criam contas identificadas por `frontend-e2e-`, empresa, unidade, veículo e entrega reais. A fixture faz login pelo próprio `/api/session/login`, sem inserir sessão diretamente no Redis e sem interceptar a identidade. Criação e conclusão de entrega, análise administrativa, oferta, PIN, rota e atualização realtime atravessam o BFF e o backend reais. Sessões são encerradas ao terminar; registros de teste permanecem no banco local, pois a API não oferece exclusão desses cadastros. Execute em uma base local destinada a desenvolvimento/testes.
 
-Validação local atual: TypeScript, ESLint, build de produção, 61 testes Vitest, 35 testes de integração do backend em 7 suítes e 4 cenários Playwright autenticados pelo login real. A cobertura visual usa o navegador local em desktop e viewport móvel; integrações reais Google Maps, Meta WhatsApp, pagamentos e credenciais externas continuam condicionadas à configuração dessas contas.
+Validação do painel do estabelecimento: TypeScript, ESLint, build de produção e 93 testes Vitest. O fluxo de catálogo, pedido, endereço manual e prontidão foi verificado no navegador com API e banco reais, em desktop e viewport móvel. Integrações reais Google Maps, Meta WhatsApp, pagamentos e credenciais externas continuam condicionadas à configuração dessas contas.
+
+Consulte [painel do estabelecimento](docs/merchant-panel.md) para rotas, comportamento e migração obrigatória do backend.
 
 Documentação complementar: [mapa de rotas](docs/routes.md), [componentes](docs/components.md), [contratos administrativos](docs/admin-contracts.md), [integrações](docs/integrations.md) e [sistema visual](docs/visual-system.md). Documentos jurídicos são placeholders identificados; pagamentos reais, mapas customizados e push continuam condicionados à configuração externa.
