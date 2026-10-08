@@ -574,6 +574,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/driver/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Driver home: posted balance, local-day earnings and assigned next stop */
+        get: operations["DriversController_home"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/driver/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Start or pause new offers while retaining custody and GPS during an assigned route */
+        patch: operations["DriversController_availability"];
+        trace?: never;
+    };
     "/api/v1/driver/me/status": {
         parameters: {
             query?: never;
@@ -1364,6 +1398,83 @@ export interface components {
             category: "HOT" | "COLD" | "FROZEN" | "AMBIENT" | "FRAGILE" | "BEVERAGE" | "MEDICINE" | "OTHER";
             /** @default 15 */
             preparationMinutes: number;
+        };
+        DriverSummaryProfileDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "OFFLINE" | "AVAILABLE" | "ON_ROUTE" | "PAUSED";
+            acceptNewOrders: boolean;
+            /** @enum {string} */
+            onboardingStatus: "PENDING" | "APPROVED" | "REJECTED";
+            /** Format: date-time */
+            locationConsentAt: string | null;
+            /** @enum {string} */
+            presence: "FRESH" | "STALE";
+        };
+        DriverSummaryWalletDto: {
+            /** @description Net posted ledger balance in cents; does not promise a withdrawal. */
+            balanceCents: number;
+            /** @enum {string} */
+            currency: "BRL";
+        };
+        DriverSummaryTodayDto: {
+            /** @example 2026-10-05 */
+            date: string;
+            /** @enum {string} */
+            timeZone: "America/Sao_Paulo";
+            /** @description Settled delivery payout plus tips posted during this local day. */
+            earningsCents: number;
+            completedDeliveries: number;
+        };
+        DriverSummaryRouteDto: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "BUILDING" | "OFFERING" | "ASSIGNED" | "ACTIVE" | "COMPLETED" | "CANCELLED" | "FAILED";
+            version: number;
+            remainingStops: number;
+            totalStops: number;
+            remainingDeliveries: number;
+            /** @description Offered payout for the route, not yet a posted balance. */
+            driverPayoutCents: number;
+        };
+        DriverSummaryNavigationDto: {
+            googleMapsUrl: string;
+            wazeUrl: string;
+        };
+        DriverSummaryStopDto: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            deliveryId: string;
+            /** @enum {string} */
+            type: "PICKUP" | "DROPOFF";
+            /** @enum {string} */
+            status: "PENDING" | "ARRIVED" | "COMPLETED" | "SKIPPED";
+            sequence: number;
+            latitude: number;
+            longitude: number;
+            /** Format: date-time */
+            estimatedArrivalAt: string | null;
+            address: string | null;
+            title: string;
+            /** @enum {string} */
+            readinessStatus: "PREPARING" | "READY_FOR_PICKUP";
+            /** @enum {string} */
+            deliveryStatus: "CREATED" | "WAITING_POOL" | "MATCHING" | "OFFERED" | "ASSIGNED" | "PICKUP_PENDING" | "PICKED_UP" | "IN_TRANSIT" | "ARRIVING" | "DELIVERED" | "FAILED" | "CANCELLED" | "RETURN_REQUIRED" | "RETURNING" | "RETURNED";
+            navigation: components["schemas"]["DriverSummaryNavigationDto"];
+        };
+        DriverSummaryDto: {
+            driver: components["schemas"]["DriverSummaryProfileDto"];
+            wallet: components["schemas"]["DriverSummaryWalletDto"];
+            today: components["schemas"]["DriverSummaryTodayDto"];
+            currentRoute: components["schemas"]["DriverSummaryRouteDto"] | null;
+            nextStop: components["schemas"]["DriverSummaryStopDto"] | null;
+        };
+        DriverAvailabilityDto: {
+            /** @description Accept new offers. Turning off keeps an assigned route and its GPS operational. */
+            acceptingOrders: boolean;
         };
         DriverStatusDto: {
             /** @enum {string} */
@@ -2360,6 +2471,46 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    DriversController_home: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriverSummaryDto"];
+                };
+            };
+        };
+    };
+    DriversController_availability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriverAvailabilityDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {
