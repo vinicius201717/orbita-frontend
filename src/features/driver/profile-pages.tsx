@@ -17,6 +17,7 @@ import type { DriverProfile, DriverStatus } from './types';
 import { DRIVER_STATUS_LABELS, ONBOARDING_LABELS, VEHICLE_LABELS } from './labels';
 import { VehicleForm } from './components/vehicle-form';
 import { GpsControls } from './components/gps-controls';
+import { DriverTodaySummary } from './components/today-summary';
 
 export function DriverDashboard() {
   const driver = useDriver();
@@ -50,10 +51,10 @@ export function DriverDashboard() {
           </p>
         </Card>
       )}
+      <DriverTodaySummary />
       <Card title="Resumo acumulado">
         <p>
-          Os indicadores disponíveis abrangem todo o histórico. Recortes de ganhos por dia, semana e mês
-          ainda não são fornecidos pela API.
+          Estes indicadores abrangem todo o histórico. Consulte os ganhos de hoje no cartão acima.
         </p>
         {analytics.isPending ? (
           <LoadingState />

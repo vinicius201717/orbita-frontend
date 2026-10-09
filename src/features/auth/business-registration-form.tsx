@@ -9,6 +9,8 @@ import type { Branch } from '@/features/business/types';
 import { useAuth } from '@/providers/auth-provider';
 import { Button, FormField, Input, Select } from '@/components/ui';
 import { ErrorState } from '@/components/feedback';
+import { DeliveryAddressField, type DeliveryAddress } from '@/features/orders-address/address-field';
+import type { SessionUser } from '@/types/auth';
 const steps = ['Conta', 'Empresa', 'Primeira unidade', 'Revisão'];
 const fields: FieldPath<BusinessRegistration>[][] = [
   ['name', 'email', 'phone', 'password', 'confirmPassword'],
@@ -19,9 +21,12 @@ type AccountSnapshot = { id: string; email: string; password: string };
 type BranchDraft = Pick<Branch, 'name' | 'address' | 'latitude' | 'longitude' | 'timezone'>;
 export function BusinessRegistrationForm() {
   const [step, setStep] = useState(0);
+  const [preparing, setPreparing] = useState(false);
+  const [location, setLocation] = useState<DeliveryAddress | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [progress, setProgress] = useState('');
   const [account, setAccount] = useState<AccountSnapshot | null>(null);
+  const [identity, setIdentity] = useState<SessionUser | null>(null);
   const accountCreated = account !== null;
   const [createdBusiness, setCreatedBusiness] = useState<string | null>(null);
   const [createdBranch, setCreatedBranch] = useState<string | null>(null);
@@ -33,6 +38,7 @@ export function BusinessRegistrationForm() {
     handleSubmit,
     trigger,
     getValues,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<BusinessRegistration>({
     resolver: zodResolver(businessRegistrationSchema),
@@ -66,9 +72,7 @@ export function BusinessRegistrationForm() {
       />
     </FormField>
   );
-  const submit = handleSubmit(async (values) => {
-    setError(null);
-    try {
+  async function ensureAccount(values: BusinessRegistration) {
       let registeredAccount = account;
       if (!registeredAccount) {
         const registered = await requestJson<{ id: string }>('/api/session/register', {
@@ -83,12 +87,19 @@ export function BusinessRegistrationForm() {
         });
         registeredAccount = { id: registered.id, email: values.email, password: values.password };
         setAccount(registeredAccount);
-        setProgress('Conta criada. Concluindo empresa e unidade…');
+        setProgress('Conta criada. Confirme o local da unidade para concluir o cadastro.');
       }
-      const user = await login(registeredAccount.email, registeredAccount.password);
+      return registeredAccount;
+  }
+  const submit = handleSubmit(async (values) => {
+    if (!location) { setError(new Error('Confirme o local da unidade antes de concluir.')); return; }
+    setError(null);
+    try {
+      const registeredAccount = await ensureAccount(values);
+      const user = identity ?? await login(registeredAccount.email, registeredAccount.password);
       if (user.id !== registeredAccount.id || user.role !== 'BUSINESS_OWNER')
         throw new Error('A conta da sessão mudou. Entre na conta criada para concluir o cadastro.');
-      if (createdBusiness && user.businessId !== createdBusiness)
+      if (createdBusiness && user.businessId && user.businessId !== createdBusiness)
         throw new Error('A empresa vinculada à conta mudou. Confira o cadastro no painel.');
       let businessId = createdBusiness || user.businessId;
       if (!businessId) {
@@ -167,7 +178,7 @@ export function BusinessRegistrationForm() {
       <p>
         Etapa {step + 1} de {steps.length}: {steps[step]}
       </p>
-      <fieldset disabled={isSubmitting}>
+      <fieldset disabled={isSubmitting || preparing}>
         <legend>{steps[step]}</legend>
         {step === 0 && (
           <>
@@ -197,28 +208,27 @@ export function BusinessRegistrationForm() {
         {step === 2 && (
           <>
             {text('branchName', 'Nome da unidade')}
-            {text('address', 'Endereço completo — rua, número, bairro, cidade, estado e CEP')}
-            <p>
-              A conversão automática de endereço em coordenadas não está disponível. Informe as
-              coordenadas do local da coleta.
-            </p>
-            <FormField id="business-latitude" label="Latitude" error={errors.latitude?.message}>
-              <Input
-                readOnly={!!branchSubmission}
-                type="number"
-                step="any"
-                {...register('latitude', { valueAsNumber: true })}
-              />
+            {branchSubmission ? <p>Unidade confirmada: {branchSubmission.address}</p> : <DeliveryAddressField
+              label="Endereço completo da unidade"
+              allowCurrentPosition
+              value={location}
+              onChange={(value) => {
+                setLocation(value); setError(null);
+                if (value) {
+                  setValue('address', value.address, { shouldValidate: true });
+                  setValue('latitude', value.latitude, { shouldValidate: true });
+                  setValue('longitude', value.longitude, { shouldValidate: true });
+                }
+              }}
+            />}
+            <FormField id="business-timezone" label="Fuso horário da unidade" error={errors.timezone?.message}>
+              <Select {...register('timezone')} disabled={!!branchSubmission}>
+                <option value="America/Sao_Paulo">Horário de Brasília</option>
+                <option value="America/Manaus">Horário de Manaus</option>
+                <option value="America/Rio_Branco">Horário do Acre</option>
+                <option value="America/Noronha">Horário de Fernando de Noronha</option>
+              </Select>
             </FormField>
-            <FormField id="business-longitude" label="Longitude" error={errors.longitude?.message}>
-              <Input
-                readOnly={!!branchSubmission}
-                type="number"
-                step="any"
-                {...register('longitude', { valueAsNumber: true })}
-              />
-            </FormField>
-            {text('timezone', 'Fuso horário da unidade')}
           </>
         )}
         {step === 3 && (
@@ -241,10 +251,8 @@ export function BusinessRegistrationForm() {
             <dd>
               {getValues('branchName')} — {getValues('address')}
             </dd>
-            <dt>Coordenadas</dt>
-            <dd>
-              {getValues('latitude')}, {getValues('longitude')}
-            </dd>
+            <dt>Local de coleta</dt>
+            <dd>Confirmado no mapa</dd>
             <dt>Fuso</dt>
             <dd>{getValues('timezone')}</dd>
           </dl>
@@ -254,24 +262,39 @@ export function BusinessRegistrationForm() {
       {!!error && <ErrorState error={error} />}
       <div className="form-actions">
         {step > 0 && (
-          <Button disabled={isSubmitting} onClick={() => setStep((value) => value - 1)}>
+          <Button disabled={isSubmitting || preparing} onClick={() => setStep((value) => value - 1)}>
             Voltar
           </Button>
         )}
         {step < 3 ? (
           <Button
+            loading={preparing}
             onClick={async () => {
-              if (await trigger(fields[step])) setStep((value) => value + 1);
+              if (preparing || !(await trigger(fields[step]))) return;
+              if (step === 2 && !location) { setError(new Error('Confirme o local da unidade para continuar.')); return; }
+              setError(null);
+              if (step === 1) {
+                setPreparing(true);
+                try {
+                  const registered = await ensureAccount(getValues());
+                  const user = await login(registered.email, registered.password);
+                  if (user.id !== registered.id || user.role !== 'BUSINESS_OWNER') throw new Error('Entre na conta criada para continuar.');
+                  setIdentity(user);
+                  setStep(2);
+                } catch (cause) { setError(cause); }
+                finally { setPreparing(false); }
+              } else setStep((value) => value + 1);
             }}
           >
             Continuar
           </Button>
         ) : (
           <Button type="submit" loading={isSubmitting}>
-            {accountCreated ? 'Retomar cadastro' : 'Criar minha conta'}
+            {createdBusiness || branchSubmission ? 'Retomar cadastro' : 'Criar minha conta'}
           </Button>
         )}
       </div>
+      {step === 1 && !accountCreated && <p>Ao continuar, sua conta será criada para consultar endereços. Você poderá retomar o cadastro depois.</p>}
       <p>
         Se alguma etapa falhar depois da criação da conta, ela permanece criada. Retome aqui ou entre
         para concluir o onboarding.

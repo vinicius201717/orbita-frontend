@@ -125,6 +125,7 @@ export function BranchForm({
       </FormField>
       <DeliveryAddressField
         label="Endereço da unidade de coleta"
+        allowCurrentPosition
         value={location}
         onChange={(value) => {
           setLocation(value);

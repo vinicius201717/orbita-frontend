@@ -10,6 +10,7 @@ import { ordersApi } from '@/services/api/orders.api';
 import { formatCurrency, formatDate } from '@/lib/format';
 import { orderStage, orderStageLabel } from './order-state';
 import { OrderActions } from './order-actions';
+import { CustomerCode } from '@/features/deliveries/customer-code';
 import styles from './orders.module.css';
 
 export function OrderDetailPage({ id }: { id: string }) {
@@ -54,6 +55,7 @@ export function OrderDetailPage({ id }: { id: string }) {
           Voltar aos pedidos
         </Link>
       </header>
+      <CustomerCode id={delivery.id} status={delivery.status} />
       <section className={styles.statusPanel}>
         <div>
           <span className={styles.badge} data-stage={orderStage(delivery)}>

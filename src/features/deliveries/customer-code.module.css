@@ -1,0 +1,2 @@
+.revealed { display: grid; justify-items: start; gap: var(--space-3, 0.75rem); }
+.code { font-family: var(--font-heading), sans-serif; font-size: 2rem; font-weight: 700; letter-spacing: .35em; padding: .75rem 1rem; border: 1px solid var(--color-border); border-radius: .75rem; }

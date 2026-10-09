@@ -23,9 +23,11 @@ import { statusLabel } from '@/constants/status';
 import { formatDate, formatDuration } from '@/lib/format';
 import { deliverySchema, type DeliveryInput } from './schemas';
 import { cargoCategories, type Delivery } from './types';
+import { DeliveryAddressField, type DeliveryAddress } from '@/features/orders-address/address-field';
 const optionalNumber = { setValueAs: (value: string) => (value === '' ? undefined : Number(value)) };
 export function NewDeliveryPage() {
   const { user } = useAuth();
+  const [location, setLocation] = useState<DeliveryAddress | null>(null);
   const branches = useBranches();
   const client = useQueryClient();
   const [review, setReview] = useState<DeliveryInput | null>(null);
@@ -99,6 +101,7 @@ export function NewDeliveryPage() {
         <Button
           onClick={() => {
             form.reset();
+            setLocation(null);
             setCreated(null);
             setReview(null);
             request.current = null;
@@ -123,10 +126,8 @@ export function NewDeliveryPage() {
             <dd>{review.customer.phone || 'Não informado'}</dd>
             <dt>Autoriza mensagens</dt>
             <dd>{review.customer.optIn ? 'Sim' : 'Não'}</dd>
-            <dt>Localização</dt>
-            <dd>
-              {review.dropoff.latitude}, {review.dropoff.longitude}
-            </dd>
+            <dt>Endereço confirmado</dt>
+            <dd>{location?.address}</dd>
             <dt>Complemento</dt>
             <dd>{review.dropoff.complement || 'Não informado'}</dd>
           </dl>
@@ -192,6 +193,7 @@ export function NewDeliveryPage() {
       <PageHeader title="Nova entrega" description="Informe a coleta, o cliente e os itens do pedido." />
       <form
         onSubmit={handleSubmit((data) => {
+          if (!location) { setError(new Error('Confirme o endereço e o ponto de entrega.')); return; }
           setReview(data);
           setError(null);
         })}
@@ -232,38 +234,13 @@ export function NewDeliveryPage() {
         </fieldset>
         <fieldset>
           <legend>Local da entrega</legend>
-          <p>
-            Informe as coordenadas do destino. A busca de endereço ainda não está disponível na API. Não
-            use a localização do seu aparelho como destino sem conferência.
-          </p>
-          <FormField
-            id="dropoffLatitude"
-            label="Latitude do destino"
-            error={errors.dropoff?.latitude?.message}
-          >
-            <Input
-              {...register('dropoff.latitude', { valueAsNumber: true })}
-              type="number"
-              step="any"
-              min={-90}
-              max={90}
-              required
-            />
-          </FormField>
-          <FormField
-            id="dropoffLongitude"
-            label="Longitude do destino"
-            error={errors.dropoff?.longitude?.message}
-          >
-            <Input
-              {...register('dropoff.longitude', { valueAsNumber: true })}
-              type="number"
-              step="any"
-              min={-180}
-              max={180}
-              required
-            />
-          </FormField>
+          <DeliveryAddressField value={location} onChange={(value) => {
+            setLocation(value); setError(null);
+            if (value) {
+              form.setValue('dropoff.latitude', value.latitude, { shouldValidate: true });
+              form.setValue('dropoff.longitude', value.longitude, { shouldValidate: true });
+            }
+          }} />
           <FormField
             id="dropoffComplement"
             label="Complemento e referência (opcional)"
@@ -336,6 +313,7 @@ export function NewDeliveryPage() {
               ))}
             </Select>
           </FormField>
+          <details><summary>Detalhes opcionais da carga</summary>
           <FormField
             id="capacityUnits"
             label="Unidades de capacidade (opcional)"
@@ -386,9 +364,10 @@ export function NewDeliveryPage() {
           >
             <Input {...register('packageType')} maxLength={80} />
           </FormField>
+          </details>
         </fieldset>
-        <fieldset>
-          <legend>Prazos e referência (opcionais)</legend>
+        <details><summary>Prazos e referência opcionais</summary><fieldset>
+          <legend>Prazos e referência</legend>
           <p>
             Horários no fuso do seu navegador. Deixe os limites vazios para usar os prazos definidos pelo
             backend.
@@ -436,6 +415,8 @@ export function NewDeliveryPage() {
             <Input {...register('externalReference')} maxLength={100} />
           </FormField>
         </fieldset>
+        </details>
+        {!!error && <ErrorState error={error} />}
         <Button type="submit">Revisar entrega</Button>
       </form>
     </>

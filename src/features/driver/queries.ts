@@ -5,6 +5,7 @@ import { driverApi } from '@/services/api/driver.api';
 export const driverKeys = {
   all: ['driver'] as const,
   me: ['driver', 'me'] as const,
+  summary: ['driver', 'summary'] as const,
   offers: ['driver', 'offers'] as const,
   routeHistory: ['driver', 'route-history'] as const,
   analytics: ['driver', 'analytics'] as const,

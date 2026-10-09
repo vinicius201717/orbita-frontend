@@ -1,7 +1,11 @@
 import { ServerApiError } from './backend';
 import { sameOrigin } from './security';
+import { allowedOrigins } from './origins';
 export function requireOrigin(request: Request) {
-  if (!sameOrigin(request, process.env.APP_URL || 'http://localhost:3001'))
+  let origins: string[];
+  try { origins = allowedOrigins(); }
+  catch { throw new ServerApiError(503, 'ORIGIN_CONFIGURATION_INVALID', 'O acesso está temporariamente indisponível. A operação precisa revisar a configuração do site.'); }
+  if (!origins.some((origin) => sameOrigin(request, origin)))
     throw new ServerApiError(403, 'CSRF_REJECTED', 'Origem da solicitação não permitida.');
 }
 export async function readJson(request: Request): Promise<unknown> {

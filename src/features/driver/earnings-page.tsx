@@ -8,6 +8,7 @@ import { formatCurrency, formatDate } from '@/lib/format';
 import { driverApi } from '@/services/api/driver.api';
 import { driverKeys } from './queries';
 import { statusLabel } from '@/constants/status';
+import { DriverTodaySummary } from './components/today-summary';
 
 export function DriverEarningsPage() {
   const [walletCursors, setWalletCursors] = useState<(string | undefined)[]>([undefined]);
@@ -35,6 +36,7 @@ export function DriverEarningsPage() {
           <p>{formatCurrency(wallet.data.balanceCents)}</p>
         )}
       </Card>
+      <DriverTodaySummary />
       <Card title="Ganhos acumulados">
         {analytics.isPending ? (
           <LoadingState />
@@ -47,8 +49,7 @@ export function DriverEarningsPage() {
           </p>
         )}
         <p>
-          Recortes de hoje, semana e mês ainda não são fornecidos pela API. O saldo considera todos os
-          lançamentos, inclusive ajustes.
+          O saldo considera todos os lançamentos, inclusive ajustes. Filtros por semana e mês ainda não estão disponíveis.
         </p>
       </Card>
       <section aria-labelledby="wallet-heading">

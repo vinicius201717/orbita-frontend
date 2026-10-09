@@ -31,6 +31,7 @@ import { deliveryApi } from '@/services/api/delivery.api';
 import { formatCurrency, formatDate, formatDuration } from '@/lib/format';
 import { cancelSchema, incidentSchema, type IncidentInput } from './schemas';
 import { incidentLabels, incidentTypes, type Delivery } from './types';
+import { CustomerCode } from './customer-code';
 
 export function DeliveryDetailPage({ id }: { id: string }) {
   const { user } = useAuth();
@@ -199,6 +200,7 @@ export function DeliveryDetailPage({ id }: { id: string }) {
         </dl>
         <Link href="/app/financeiro">Consultar lançamentos financeiros</Link>
       </Card>
+      <CustomerCode id={delivery.id} status={delivery.status} />
       <Card title="Comprovante">
         <p>
           {delivery.verifiedAt
@@ -207,7 +209,7 @@ export function DeliveryDetailPage({ id }: { id: string }) {
         </p>
         <UnavailableFeature
           title="Documento do comprovante"
-          description="A API não oferece consulta ou download de comprovante detalhado. O código privado do cliente não é exibido nesta interface."
+          description="O recebimento confirmado fica registrado acima. O download de um comprovante detalhado ainda não está disponível."
         />
       </Card>
       <DeliveryIncidents id={delivery.id} timezone={timezone} />

@@ -9,6 +9,7 @@ import { businessApi } from '@/services/api/business.api';
 import { deliveryApi } from '@/services/api/delivery.api';
 import { BusinessForm, BranchForm } from './forms';
 import { useBranches } from './queries';
+import { WhatsAppAccountPanel } from '@/features/whatsapp/account-panel';
 export function BusinessOnboarding() {
   const { user, refresh } = useAuth();
   const branches = useBranches();
@@ -33,8 +34,8 @@ export function BusinessOnboarding() {
           {branches.data?.length ? 'cadastrada' : branches.isFetching ? 'verificando' : 'pendente'}
         </li>
         <li>
-          WhatsApp: verificação não disponível para consulta.{' '}
-          <Link href="/app/whatsapp">Ver orientações</Link>
+          WhatsApp: confira o estado do canal abaixo.{' '}
+          <Link href="/app/whatsapp">Gerenciar WhatsApp</Link>
         </li>
         <li>
           Documentos: envie os arquivos solicitados pela operação.{' '}
@@ -81,11 +82,12 @@ export function BusinessOnboarding() {
         </Card>
       ) : (
         <Card title="Pronto para registrar entregas">
-          <Link href="/app/entregas/nova">Criar primeira entrega</Link>
+          <Link href="/app/pedidos/novo">Criar primeiro pedido</Link>
           {' · '}
           <Link href="/app">Ir para o painel</Link>
         </Card>
       )}
+      <WhatsAppAccountPanel />
       {deliveries.error && (
         <ErrorState error={deliveries.error} retry={() => void deliveries.refetch()} />
       )}

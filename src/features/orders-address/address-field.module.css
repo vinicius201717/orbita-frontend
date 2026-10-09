@@ -44,6 +44,16 @@
   display: inline-block;
   margin-bottom: 12px;
 }
+.coordinates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 560px) {
+  .coordinates {
+    grid-template-columns: 1fr;
+  }
+}
 .confirmed {
   display: grid;
   gap: 6px;

@@ -13,10 +13,12 @@ import type {
   Vehicle,
 } from '@/features/driver/types';
 import type { VehicleInput } from '@/features/driver/schemas';
+import type { components } from '@/types/openapi.generated';
 
 const idPath = (id: string) => encodeURIComponent(id);
 export const driverApi = {
   me: () => api.get<DriverProfile>('/driver/me'),
+  summary: () => api.get<components['schemas']['DriverSummaryDto']>('/driver/summary'),
   status: (status: DriverStatus) =>
     api.patch<Omit<DriverProfile, 'vehicles' | 'currentLocation' | 'presence'>>('/driver/me/status', {
       status,

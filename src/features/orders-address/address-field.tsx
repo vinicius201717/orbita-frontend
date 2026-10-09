@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Button, FormField, Input } from '@/components/ui';
 import { api } from '@/services/api/client';
 import { ErrorState } from '@/components/feedback';
@@ -7,22 +7,58 @@ import { parseDestinationPoint } from './coordinates';
 import styles from './address-field.module.css';
 
 export type DeliveryAddress = { address: string; latitude: number; longitude: number };
-type Candidate = DeliveryAddress & { approximate: boolean };
+type Candidate = DeliveryAddress & { approximate: boolean; source?: 'device' };
 export function DeliveryAddressField({
   value,
   onChange,
   label = 'Endereço da entrega',
+  allowCurrentPosition = false,
 }: {
   value: DeliveryAddress | null;
   onChange: (value: DeliveryAddress | null) => void;
   label?: string;
+  allowCurrentPosition?: boolean;
 }) {
+  const fieldId = useId();
   const [address, setAddress] = useState(value?.address ?? '');
   const [point, setPoint] = useState('');
+  const [latitude, setLatitude] = useState(value ? String(value.latitude) : '');
+  const [longitude, setLongitude] = useState(value ? String(value.longitude) : '');
   const [results, setResults] = useState<Candidate[] | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const revision = useRef(0);
+  useEffect(() => () => { revision.current++; }, []);
+  function emitCoordinates(nextAddress: string, nextLatitude: string, nextLongitude: string) {
+    const parsedLatitude = Number(nextLatitude);
+    const parsedLongitude = Number(nextLongitude);
+    if (
+      nextAddress.trim().length >= 8 &&
+      Number.isFinite(parsedLatitude) &&
+      Number.isFinite(parsedLongitude) &&
+      parsedLatitude >= -90 && parsedLatitude <= 90 &&
+      parsedLongitude >= -180 && parsedLongitude <= 180
+    ) {
+      onChange({ address: nextAddress.trim(), latitude: parsedLatitude, longitude: parsedLongitude });
+    } else {
+      onChange(null);
+    }
+  }
+  function locate() {
+    if (pending) return;
+    if (address.trim().length < 8) { setError(new Error('Informe o endereço completo antes de localizar a unidade.')); return; }
+    if (!navigator.geolocation) { setError(new Error('Este navegador não oferece localização. Busque o endereço ou use um ponto do mapa.')); return; }
+    const current = ++revision.current;
+    setPending(true); setError(null); setResults(null); onChange(null);
+    navigator.geolocation.getCurrentPosition((position) => {
+      if (current !== revision.current) return;
+      setPending(false);
+      setResults([{ address: address.trim(), latitude: position.coords.latitude, longitude: position.coords.longitude, approximate: true, source: 'device' }]);
+    }, () => {
+      if (current !== revision.current) return;
+      setPending(false); setError(new Error('Não foi possível localizar o aparelho. Permita a localização ou busque o endereço.'));
+    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+  }
   async function search() {
     if (pending) return;
     if (address.trim().length < 8) {
@@ -46,7 +82,15 @@ export function DeliveryAddressField({
     }
   }
   function manual() {
-    const destination = parseDestinationPoint(point);
+    const explicitLatitude = Number(latitude);
+    const explicitLongitude = Number(longitude);
+    const destination = parseDestinationPoint(point) ?? (
+      Number.isFinite(explicitLatitude) && Number.isFinite(explicitLongitude) &&
+      explicitLatitude >= -90 && explicitLatitude <= 90 &&
+      explicitLongitude >= -180 && explicitLongitude <= 180
+        ? { latitude: explicitLatitude, longitude: explicitLongitude }
+        : null
+    );
     if (address.trim().length < 8 || !destination) {
       setError(
         new Error(
@@ -64,7 +108,7 @@ export function DeliveryAddressField({
   return (
     <div className={styles.root}>
       <FormField
-        id="order-address"
+        id={`${fieldId}-address`}
         label={label}
         hint="Rua, número, bairro e cidade. Deixe apartamento e referência para o complemento."
       >
@@ -76,8 +120,9 @@ export function DeliveryAddressField({
           onChange={(event) => {
             revision.current++;
             setPending(false);
-            setAddress(event.target.value);
-            onChange(null);
+            const nextAddress = event.target.value;
+            setAddress(nextAddress);
+            emitCoordinates(nextAddress, latitude, longitude);
             setResults(null);
             setError(null);
           }}
@@ -86,12 +131,13 @@ export function DeliveryAddressField({
       <Button loading={pending} onClick={() => void search()}>
         Buscar endereço
       </Button>
+      {allowCurrentPosition && <><Button disabled={pending} onClick={locate}>Estou na unidade: localizar aparelho</Button><small>Use somente se estiver no local de coleta. Confira o ponto no mapa antes de confirmar.</small></>}
       {!!error && <ErrorState error={error} />}
       {results && (
         <div className={styles.results} aria-live="polite">
           {results.length ? (
             <>
-              <p>Confira o local e selecione o destino:</p>
+              <p>Confira o ponto no mapa e confirme o local:</p>
               <ul>
                 {results.map((result, index) => (
                   <li key={index}>
@@ -116,12 +162,12 @@ export function DeliveryAddressField({
                         setResults(null);
                       }}
                     >
-                      Usar este destino
+                      Confirmar este local
                     </Button>
                   </li>
                 ))}
               </ul>
-              <small>Resultados do Google Maps</small>
+              <small>{results.some((result) => result.source === 'device') ? 'Localização do aparelho; não confirma o endereço automaticamente.' : 'Resultados do Google Maps'}</small>
             </>
           ) : (
             <p>Nenhum local encontrado. Confira o endereço ou use um ponto do mapa abaixo.</p>
@@ -143,7 +189,7 @@ export function DeliveryAddressField({
           Abrir endereço no Google Maps ↗
         </a>
         <FormField
-          id="order-address-point"
+          id={`${fieldId}-point`}
           label="Coordenadas ou link completo do ponto"
           hint="Links curtos de compartilhamento precisam ser abertos no mapa primeiro."
         >
@@ -156,18 +202,46 @@ export function DeliveryAddressField({
             }}
           />
         </FormField>
+        <div className={styles.coordinates}>
+          <FormField id={`${fieldId}-latitude`} label="Latitude" hint="Entre -90 e 90.">
+            <Input
+              type="number"
+              step="any"
+              value={latitude}
+              inputMode="decimal"
+              onChange={(event) => {
+                const nextLatitude = event.target.value;
+                setLatitude(nextLatitude);
+                emitCoordinates(address, nextLatitude, longitude);
+              }}
+            />
+          </FormField>
+          <FormField id={`${fieldId}-longitude`} label="Longitude" hint="Entre -180 e 180.">
+            <Input
+              type="number"
+              step="any"
+              value={longitude}
+              inputMode="decimal"
+              onChange={(event) => {
+                const nextLongitude = event.target.value;
+                setLongitude(nextLongitude);
+                emitCoordinates(address, latitude, nextLongitude);
+              }}
+            />
+          </FormField>
+        </div>
         <Button onClick={manual}>Confirmar este ponto</Button>
       </details>
       {value && (
         <div className={styles.confirmed} role="status">
-          <strong>✓ Destino confirmado</strong>
+          <strong>✓ Local confirmado</strong>
           <span>{value.address}</span>
           <a
             href={`https://www.google.com/maps/search/?api=1&query=${value.latitude},${value.longitude}`}
             target="_blank"
             rel="noopener noreferrer"
           >
-            Ver ponto da entrega ↗
+            Ver local no mapa ↗
           </a>
         </div>
       )}
