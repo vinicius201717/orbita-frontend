@@ -57,6 +57,6 @@ function PrivateCode({ id }: { id: string }) {
       <Button onClick={() => setResult(null)}>Ocultar código</Button>
     </div> : <Button onClick={() => setConfirm(true)} loading={pending}>Consultar código do cliente</Button>}
     {!!error && <ErrorState error={error} />}
-    <ConfirmDialog open={confirm} title="Consultar código privado" description="Consulte somente para encaminhar diretamente ao cliente. A consulta é registrada e não altera o código já enviado." onCancel={() => setConfirm(false)} onConfirm={() => void reveal()} loading={pending} />
+    <ConfirmDialog open={confirm} title="Consultar código privado" description="Consulte somente para encaminhar diretamente ao cliente. A consulta é registrada. Se for necessário substituir um código antigo, você será avisado." onCancel={() => setConfirm(false)} onConfirm={() => void reveal()} loading={pending} />
   </Card>;
 }

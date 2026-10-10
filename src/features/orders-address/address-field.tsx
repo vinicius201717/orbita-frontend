@@ -29,20 +29,22 @@ export function DeliveryAddressField({
   const [error, setError] = useState<unknown>(null);
   const revision = useRef(0);
   useEffect(() => () => { revision.current++; }, []);
-  function emitCoordinates(nextAddress: string, nextLatitude: string, nextLongitude: string) {
-    const parsedLatitude = Number(nextLatitude);
-    const parsedLongitude = Number(nextLongitude);
-    if (
-      nextAddress.trim().length >= 8 &&
-      Number.isFinite(parsedLatitude) &&
-      Number.isFinite(parsedLongitude) &&
-      parsedLatitude >= -90 && parsedLatitude <= 90 &&
-      parsedLongitude >= -180 && parsedLongitude <= 180
-    ) {
-      onChange({ address: nextAddress.trim(), latitude: parsedLatitude, longitude: parsedLongitude });
-    } else {
-      onChange(null);
-    }
+  function invalidatePoint() {
+    revision.current++;
+    setPending(false);
+    setResults(null);
+    setError(null);
+    onChange(null);
+  }
+  function confirmPoint(destination: Pick<DeliveryAddress, 'latitude' | 'longitude'>) {
+    revision.current++;
+    setPending(false);
+    setResults(null);
+    setError(null);
+    setPoint('');
+    setLatitude(String(destination.latitude));
+    setLongitude(String(destination.longitude));
+    onChange({ address: address.trim(), ...destination });
   }
   function locate() {
     if (pending) return;
@@ -82,15 +84,11 @@ export function DeliveryAddressField({
     }
   }
   function manual() {
-    const explicitLatitude = Number(latitude);
-    const explicitLongitude = Number(longitude);
-    const destination = parseDestinationPoint(point) ?? (
-      Number.isFinite(explicitLatitude) && Number.isFinite(explicitLongitude) &&
-      explicitLatitude >= -90 && explicitLatitude <= 90 &&
-      explicitLongitude >= -180 && explicitLongitude <= 180
-        ? { latitude: explicitLatitude, longitude: explicitLongitude }
-        : null
-    );
+    const destination = point.trim()
+      ? parseDestinationPoint(point)
+      : latitude.trim() && longitude.trim()
+        ? parseDestinationPoint(`${latitude},${longitude}`)
+        : null;
     if (address.trim().length < 8 || !destination) {
       setError(
         new Error(
@@ -99,11 +97,7 @@ export function DeliveryAddressField({
       );
       return;
     }
-    revision.current++;
-    setPending(false);
-    setError(null);
-    setResults(null);
-    onChange({ address: address.trim(), ...destination });
+    confirmPoint(destination);
   }
   return (
     <div className={styles.root}>
@@ -118,13 +112,11 @@ export function DeliveryAddressField({
           autoComplete="street-address"
           placeholder="Ex.: Rua 9, 120, Centro, Goiânia, GO"
           onChange={(event) => {
-            revision.current++;
-            setPending(false);
-            const nextAddress = event.target.value;
-            setAddress(nextAddress);
-            emitCoordinates(nextAddress, latitude, longitude);
-            setResults(null);
-            setError(null);
+            setAddress(event.target.value);
+            setPoint('');
+            setLatitude('');
+            setLongitude('');
+            invalidatePoint();
           }}
         />
       </FormField>
@@ -153,14 +145,7 @@ export function DeliveryAddressField({
                       Conferir no mapa ↗
                     </a>
                     <Button
-                      onClick={() => {
-                        onChange({
-                          address: address.trim(),
-                          latitude: result.latitude,
-                          longitude: result.longitude,
-                        });
-                        setResults(null);
-                      }}
+                      onClick={() => confirmPoint({ latitude: result.latitude, longitude: result.longitude })}
                     >
                       Confirmar este local
                     </Button>
@@ -198,7 +183,9 @@ export function DeliveryAddressField({
             placeholder="-16.6800, -49.2500"
             onChange={(event) => {
               setPoint(event.target.value);
-              onChange(null);
+              setLatitude('');
+              setLongitude('');
+              invalidatePoint();
             }}
           />
         </FormField>
@@ -210,9 +197,9 @@ export function DeliveryAddressField({
               value={latitude}
               inputMode="decimal"
               onChange={(event) => {
-                const nextLatitude = event.target.value;
-                setLatitude(nextLatitude);
-                emitCoordinates(address, nextLatitude, longitude);
+                setLatitude(event.target.value);
+                setPoint('');
+                invalidatePoint();
               }}
             />
           </FormField>
@@ -223,9 +210,9 @@ export function DeliveryAddressField({
               value={longitude}
               inputMode="decimal"
               onChange={(event) => {
-                const nextLongitude = event.target.value;
-                setLongitude(nextLongitude);
-                emitCoordinates(address, latitude, nextLongitude);
+                setLongitude(event.target.value);
+                setPoint('');
+                invalidatePoint();
               }}
             />
           </FormField>

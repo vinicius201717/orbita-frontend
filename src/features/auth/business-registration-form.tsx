@@ -10,7 +10,6 @@ import { useAuth } from '@/providers/auth-provider';
 import { Button, FormField, Input, Select } from '@/components/ui';
 import { ErrorState } from '@/components/feedback';
 import { DeliveryAddressField, type DeliveryAddress } from '@/features/orders-address/address-field';
-import type { SessionUser } from '@/types/auth';
 const steps = ['Conta', 'Empresa', 'Primeira unidade', 'Revisão'];
 const fields: FieldPath<BusinessRegistration>[][] = [
   ['name', 'email', 'phone', 'password', 'confirmPassword'],
@@ -26,7 +25,6 @@ export function BusinessRegistrationForm() {
   const [error, setError] = useState<unknown>(null);
   const [progress, setProgress] = useState('');
   const [account, setAccount] = useState<AccountSnapshot | null>(null);
-  const [identity, setIdentity] = useState<SessionUser | null>(null);
   const accountCreated = account !== null;
   const [createdBusiness, setCreatedBusiness] = useState<string | null>(null);
   const [createdBranch, setCreatedBranch] = useState<string | null>(null);
@@ -96,10 +94,10 @@ export function BusinessRegistrationForm() {
     setError(null);
     try {
       const registeredAccount = await ensureAccount(values);
-      const user = identity ?? await login(registeredAccount.email, registeredAccount.password);
-      if (user.id !== registeredAccount.id || user.role !== 'BUSINESS_OWNER')
+      const user = await refresh();
+      if (!user || user.id !== registeredAccount.id || user.role !== 'BUSINESS_OWNER')
         throw new Error('A conta da sessão mudou. Entre na conta criada para concluir o cadastro.');
-      if (createdBusiness && user.businessId && user.businessId !== createdBusiness)
+      if (createdBusiness && user.businessId !== createdBusiness)
         throw new Error('A empresa vinculada à conta mudou. Confira o cadastro no painel.');
       let businessId = createdBusiness || user.businessId;
       if (!businessId) {
@@ -279,7 +277,6 @@ export function BusinessRegistrationForm() {
                   const registered = await ensureAccount(getValues());
                   const user = await login(registered.email, registered.password);
                   if (user.id !== registered.id || user.role !== 'BUSINESS_OWNER') throw new Error('Entre na conta criada para continuar.');
-                  setIdentity(user);
                   setStep(2);
                 } catch (cause) { setError(cause); }
                 finally { setPreparing(false); }

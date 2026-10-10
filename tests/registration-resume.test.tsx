@@ -60,8 +60,10 @@ async function fillBusiness() {
     await user.type(screen.getByLabelText(label, { exact: true }), value);
   await user.click(screen.getByRole('button', { name: 'Continuar' }));
   await user.type(screen.getByLabelText(/Endereço completo/), branch.address);
+  await user.click(screen.getByText('Usar um ponto do Google Maps'));
   await user.type(screen.getByLabelText('Latitude', { exact: true }), String(branch.latitude));
   await user.type(screen.getByLabelText('Longitude', { exact: true }), String(branch.longitude));
+  await user.click(screen.getByRole('button', { name: 'Confirmar este ponto' }));
   await user.click(screen.getByRole('button', { name: 'Continuar' }));
   return user;
 }
@@ -72,7 +74,10 @@ describe('registration resumes the same account without repeating completed writ
       .mockResolvedValue({ id, role: 'BUSINESS_OWNER', businessId: 'company' });
     mocks.get.mockResolvedValue([]);
     mocks.post.mockResolvedValueOnce({ id: 'company' }).mockResolvedValueOnce(branch);
-    mocks.refresh.mockRejectedValueOnce(new Error('Falha de rede')).mockResolvedValue({ id });
+    mocks.refresh
+      .mockResolvedValueOnce({ id, role: 'BUSINESS_OWNER', businessId: null })
+      .mockRejectedValueOnce(new Error('Falha de rede'))
+      .mockResolvedValue({ id, role: 'BUSINESS_OWNER', businessId: 'company' });
     render(<BusinessRegistrationForm />);
     const user = await fillBusiness();
     await user.click(screen.getByRole('button', { name: 'Criar minha conta' }));
@@ -90,7 +95,7 @@ describe('registration resumes the same account without repeating completed writ
     mocks.login.mockResolvedValue({ id, role: 'BUSINESS_OWNER', businessId: 'company' });
     mocks.get.mockResolvedValueOnce([]).mockResolvedValue([branch]);
     mocks.post.mockRejectedValueOnce(new Error('Resposta perdida'));
-    mocks.refresh.mockResolvedValue({ id });
+    mocks.refresh.mockResolvedValue({ id, role: 'BUSINESS_OWNER', businessId: 'company' });
     render(<BusinessRegistrationForm />);
     const user = await fillBusiness();
     await user.click(screen.getByRole('button', { name: 'Criar minha conta' }));
@@ -98,6 +103,27 @@ describe('registration resumes the same account without repeating completed writ
     await user.click(screen.getByRole('button', { name: 'Retomar cadastro' }));
     expect(mocks.push).toHaveBeenCalledWith('/app/onboarding');
     expect(mocks.post).toHaveBeenCalledTimes(1);
+  });
+  it('does not write company data if another account replaced the registration session', async () => {
+    mocks.login.mockResolvedValue({ id, role: 'BUSINESS_OWNER', businessId: null });
+    mocks.refresh.mockResolvedValue({ id: 'another-owner', role: 'BUSINESS_OWNER', businessId: null });
+    render(<BusinessRegistrationForm />);
+    const user = await fillBusiness();
+    await user.click(screen.getByRole('button', { name: 'Criar minha conta' }));
+    await screen.findByText('A conta da sessão mudou. Entre na conta criada para concluir o cadastro.');
+    expect(mocks.post).not.toHaveBeenCalled();
+    expect(mocks.get).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalled();
+  });
+  it('does not write company data if the registration session expired', async () => {
+    mocks.login.mockResolvedValue({ id, role: 'BUSINESS_OWNER', businessId: null });
+    mocks.refresh.mockResolvedValue(null);
+    render(<BusinessRegistrationForm />);
+    const user = await fillBusiness();
+    await user.click(screen.getByRole('button', { name: 'Criar minha conta' }));
+    await screen.findByText('A conta da sessão mudou. Entre na conta criada para concluir o cadastro.');
+    expect(mocks.post).not.toHaveBeenCalled();
+    expect(mocks.get).not.toHaveBeenCalled();
   });
   it('reconciles the vehicle after an ambiguous response before retrying onboarding', async () => {
     mocks.login.mockResolvedValue({ id, role: 'DRIVER' });
